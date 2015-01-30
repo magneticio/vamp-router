@@ -1,0 +1,18 @@
+{
+	"ImportPath": "github.com/magneticio/vamp-loadbalancer",
+	"GoVersion": "go1.4.1",
+	"Packages": [
+		"github.com/magneticio/vamp-loadbalancer"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/natefinch/lumberjack",
+			"Comment": "v1.0-12-gd28785c",
+			"Rev": "d28785c2f27cd682d872df46ccd8232843629f54"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "fb0230561a6ba1cab17beb95f1faedc16584fdb8"
+		}
+	]
+}
