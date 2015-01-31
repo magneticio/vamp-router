@@ -12,33 +12,34 @@ type Runtime struct {
 // Main configuration object for load balancers. This contains all variables and is passed to
 // the templating engine.
 type Config struct {
-	Frontends    []*Frontend   `json:"frontends"`
-	Backends     []*Backend    `json:"backends"`
+	Frontends    []*Frontend   `json:"frontends" binding:"required"`
+	Backends     []*Backend    `json:"backends" binding:"required"`
 	PidFile      string        `json:"-"`
 	Mutex        *sync.RWMutex `json:"-"`
 	TemplateFile string        `json:"-"`
 	ConfigFile   string        `json:"-"`
+	JsonFile     string        `json:"-"`
 }
 
 // Defines a single haproxy "backend".
 type Backend struct {
-	Name           string           `json:"name"`
-	Mode           string           `json:"mode"`
-	BackendServers []*BackendServer `json:"servers"`
+	Name           string           `json:"name" binding:"required"`
+	Mode           string           `json:"mode" binding:"required"`
+	BackendServers []*BackendServer `json:"servers" binding:"required"`
 	Options        ProxyOptions     `json:"options"`
-	ProxyMode      bool             `json:"proxyMode"`
+	ProxyMode      bool             `json:"proxyMode" binding:"required"`
 }
 
 // Defines a single haproxy "frontend".
 type Frontend struct {
-	Name           string       `json:"name"`
-	Mode           string       `json:"mode"`
+	Name           string       `json:"name" binding:"required"`
+	Mode           string       `json:"mode" binding:"required"`
 	BindPort       int          `json:"bindPort"`
 	BindIp         string       `json:"bindIp"`
 	UnixSock       string       `json:"unixSock"`
 	SockProtocol   string       `json:"sockProtocol"`
 	Options        ProxyOptions `json:"options"`
-	DefaultBackend string       `json:"defaultBackend"`
+	DefaultBackend string       `json:"defaultBackend" binding:"required"`
 	ACLs           []*ACL       `json:"acls"`
 	HttpSpikeLimit SpikeLimit   `json:"httpSpikeLimit,omitempty"`
 	TcpSpikeLimit  SpikeLimit   `json:"tcpSpikeLimit,omitempty"`
@@ -60,11 +61,11 @@ type ProxyOptions struct {
 
 // Defines a server which exists in a backend.
 type BackendServer struct {
-	Name          string `json:"name"`
+	Name          string `json:"name" binding:"required"`
 	Host          string `json:"host"`
 	Port          int    `json:"port"`
 	UnixSock      string `json:"unixSock"`
-	Weight        int    `json:"weight"`
+	Weight        int    `json:"weight" binding:"required"`
 	MaxConn       int    `json:"maxconn"`
 	Check         bool   `json:"check"`
 	CheckInterval int    `json:"checkInterval"`
@@ -72,17 +73,17 @@ type BackendServer struct {
 
 // Defines an ACL
 type ACL struct {
-	Name    string `json:"name"`
-	Backend string `json:"backend"`
-	Pattern string `json:"pattern"`
+	Name    string `json:"name" binding:"required"`
+	Backend string `json:"backend" binding:"required"`
+	Pattern string `json:"pattern" binding:"required"`
 }
 
 // Defines a rate limiting setup
 
 type SpikeLimit struct {
-	SampleTime string `json:"sampleTime,omitempty"`
-	ExpiryTime string `json:"expiryTime,omitempty"`
-	Rate       int    `json:"rate,omitempty"`
+	SampleTime string `json:"sampleTime,omitempty" binding:"required"`
+	ExpiryTime string `json:"expiryTime,omitempty" binding:"required"`
+	Rate       int    `json:"rate,omitempty" binding:"required"`
 }
 
 // Struct to hold the output from the /stats endpoint

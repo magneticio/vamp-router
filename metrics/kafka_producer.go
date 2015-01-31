@@ -3,22 +3,22 @@ package metrics
 import (
 
   "github.com/Shopify/sarama"
+  "encoding/json"
   "log"
   "strconv"
   "time"
 )
 
 
-type KafkaMetricsConsumer struct {
-  Name string
-  Metrics chan []byte
+type KafkaProducer struct {
+  metricsChannel chan Metric
 }
 
-func(k *KafkaMetricsConsumer) Consume(m chan []byte) {
-  k.Metrics = m
+func(k *KafkaProducer) In(c chan Metric) {
+  k.metricsChannel = c
 }
 
-func (k *KafkaMetricsConsumer) Init(host string, port int) {
+func (k *KafkaProducer) Start(host string, port int) {
 
   connection := host + ":" + strconv.Itoa(port)
 
@@ -57,15 +57,18 @@ func (k *KafkaMetricsConsumer) Init(host string, port int) {
     panic(err)
   }
 
-  go k.pushMetrics(producer)
+  go k.produce(producer)
 
 }
 
-func (k *KafkaMetricsConsumer) pushMetrics(producer *sarama.Producer) {
+func (k *KafkaProducer) produce(producer *sarama.Producer) {
   for {
-        metric := <- k.Metrics
-        log.Println(string(metric   ))
-        err := producer.SendMessage("loadbalancer.all", sarama.StringEncoder("lbmetrics"), sarama.StringEncoder(metric))
+        metric := <- k.metricsChannel
+        json, err := json.MarshalIndent(metric, "", " ")
+        if err != nil {
+          return
+        }
+        err = producer.SendMessage("loadbalancer.all", sarama.StringEncoder("lbmetrics"), sarama.StringEncoder(json))
         if err != nil {
           log.Println("error sending to Kafka ")
         }

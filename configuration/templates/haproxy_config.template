@@ -173,4 +173,4 @@ backend {{.Name}}
 
 backend abusers
     mode http
-    errorfile 409 resources/500rate.http
+    errorfile 409 configuration/error_pages/500rate.http

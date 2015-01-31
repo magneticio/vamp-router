@@ -16,23 +16,22 @@ import (
   "os"
 )
 
-func (r *Runtime) SetPid(pidfile string) error {
+func (r *Runtime) SetPid(pidfile string) bool {
+
   //Create and empty pid file on the specified location, if not already there
-  if _, err := os.Stat(pidfile); err != nil {
-    return err
+  if _, err := os.Stat(pidfile); err == nil {
+    return false
   } else {
     emptyPid := []byte("")
     ioutil.WriteFile(pidfile, emptyPid, 0644)
-    return nil
+    return true
   }
 }
 
 // Reload runtime with configuration
 func (r *Runtime) Reload(c *Config) error {
 
-
   var out bytes.Buffer
-
   pid, err := ioutil.ReadFile(c.PidFile)
   if err !=nil {
     return err
@@ -62,7 +61,6 @@ func (r *Runtime) Reload(c *Config) error {
   
   cmdErr := cmd.Run()
   if cmdErr != nil {
-    fmt.Println(cmdErr.Error())
     return cmdErr
   }
 
@@ -88,13 +86,11 @@ func (r *Runtime) SetAcl(frontend string,acl string, pattern string)(string, err
 
   result, err := r.cmd("add acl " + acl + pattern)
 
-  if err != nil {
+  if err != nil { 
     return "", err
-
   } else {
     return result, nil
   }
-
 }
 
 // Gets basic info on haproxy process

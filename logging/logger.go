@@ -35,7 +35,7 @@ func ConfigureLog(logPath string) *gologging.Logger {
   var log = gologging.MustGetLogger("vamp-loadbalancer")
   var backend *gologging.LogBackend
   var format = gologging.MustStringFormatter(
-    "%{color}%{time:15:04:05.000} %{shortfunc} %{level:.4s} ==> %{color:reset} %{message}",
+    "%{color}%{time:15:04:05.000} %{shortpkg:.5s} %{level:.4s} ==> %{color:reset} %{message}",
   )
 
   // mix in the Lumberjack logger so we can have rotation on log files

@@ -14,6 +14,7 @@ func (c *Config) GetConfigFromDisk(file string) error {
 	if err != nil {
 		return err
 	}
+	
 	err = json.Unmarshal(s, &c)
 	if err != nil {
 		return err
@@ -40,8 +41,12 @@ func (c *Config) SetWeight(backend string, server string, weight int) error {
 		}
 	}
 
-	err := c.Persist()
-	return err
+	err := c.RenderAndPersist()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 
@@ -81,10 +86,6 @@ func (c *Config) Render() error {
 	}
 	defer fp.Close()
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
-
-
 	// render the template
 	t := template.Must(template.New(c.TemplateFile).Parse(string(f)))
 	err = t.Execute(fp, &c)
@@ -92,26 +93,37 @@ func (c *Config) Render() error {
 		return err
 	}
 
-	// if the template is successful, persist to disk
-	err = c.Persist()
-	if err != nil {
-
-		return err
-	}
-
 	return nil
 }
 
 
-// save the config to disk
+// save the JSON config to disk
 func (c *Config) Persist() error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(c.ConfigFile, b, 0666)
+	err = ioutil.WriteFile(c.JsonFile, b, 0666)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c *Config) RenderAndPersist() error {
+
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
+
+	err := c.Render()	
+	if err != nil {
+		return err
+	} 
+
+	err =	c.Persist()	
+	if err != nil {
+		return err
+	}
+
+	return nil 	
 }

@@ -3,7 +3,6 @@ package metrics
 import (
   "github.com/magneticio/vamp-loadbalancer/haproxy"
   "time"
-  "encoding/json"
   "strings"
   "strconv"
   "reflect"
@@ -14,26 +13,24 @@ type Streamer struct {
 
   wantedMetrics []string
   haRuntime *haproxy.Runtime
+  pollFrequency int
 
 }
 
 // Just sets the metrics we want for now...
-func (s *Streamer) Init(haRuntime *haproxy.Runtime) {
+func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int) {
 
   s.wantedMetrics = []string{ "Scur", "Qcur","Smax","Slim","Weight","Qtime","Ctime","Rtime","Ttime","Req_rate","Req_rate_max","Req_tot","Rate","Rate_lim","Rate_max" }
   s.haRuntime = haRuntime
+  s.pollFrequency = frequency
 }
 
-/* converts the haproxy metrics into a stream of discrete JSON object, like:
-  {
-   "name": "testbe.test_be_1.rate",   # The rate for server test_be_1 for proxy testbe
-   "value": "2",                      # The value of the metric
-   "timestamp": 1413546338            # The timestamp in Unix epoch
-  }
 
-  This stream can then be consumed by other streams like Kafka or SSE.  
+/* 
+  Generates an outgoing stream of discrete Metric struct values.
+  This stream can then be consumed by other streams like Kafka or SSE. 
 */ 
-func (s *Streamer) ToJson(c chan []byte) error {
+func (s *Streamer) Out(c chan Metric) error {
 
   for  {
 
@@ -56,19 +53,15 @@ func (s *Streamer) ToJson(c chan []byte) error {
 
               metricValue,_ := strconv.Atoi(field)
               metric := Metric{fullMetricName, metricValue, localTime}
-              json, err := json.MarshalIndent(metric, "", " ")
 
-              if err != nil {
-                return err
-              }
-
-              c <- json
+              c <- metric
 
             }
           }
         }
       }
 
-    time.Sleep(3000 * time.Millisecond)
+    time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
   }
+
 }
