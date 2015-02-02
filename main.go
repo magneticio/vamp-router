@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/magneticio/vamp-loadbalancer/logging"
-	"github.com/magneticio/vamp-loadbalancer/haproxy"
 	"github.com/magneticio/vamp-loadbalancer/api"
+	"github.com/magneticio/vamp-loadbalancer/haproxy"
+	"github.com/magneticio/vamp-loadbalancer/logging"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
-	"github.com/magneticio/vamp-loadbalancer/zookeeper"
 	"github.com/magneticio/vamp-loadbalancer/parsers"
+	"github.com/magneticio/vamp-loadbalancer/zookeeper"
 	gologger "github.com/op/go-logging"
 	"os"
 )
@@ -26,9 +26,9 @@ var (
 	zooConString     string
 	zooConKey        string
 	pidFilePath      string
-	log	             *gologger.Logger
-	version = "0.1"	
-	stream           metrics.Streamer						
+	log              *gologger.Logger
+	version          = "0.1"
+	stream           metrics.Streamer
 )
 
 func init() {
@@ -63,28 +63,28 @@ func main() {
 	parsers.SetValueFromEnv(&zooConString, "VAMP_LB_ZOO_STRING")
 	parsers.SetValueFromEnv(&zooConKey, "VAMP_LB_ZOO_KEY")
 	parsers.SetValueFromEnv(&pidFilePath, "VAMP_LB_PID_PATH")
-	
+
 	// setup logging
 	log = logging.ConfigureLog(logPath)
 	log.Info(logging.PrintLogo(version))
 
-/*
+	/*
 
-	HAproxy runtime and configuration setup
+		HAproxy runtime and configuration setup
 
-*/
+	*/
 
 	// setup Haproxy runtime
-	haRuntime := haproxy.Runtime{ Binary: binaryPath }
+	haRuntime := haproxy.Runtime{Binary: binaryPath}
 
 	// setup Configuration
-	haConfig := haproxy.Config{ TemplateFile: templateFilePath, ConfigFile: configFilePath, JsonFile: jsonFilePath, PidFile: pidFilePath}
+	haConfig := haproxy.Config{TemplateFile: templateFilePath, ConfigFile: configFilePath, JsonFile: jsonFilePath, PidFile: pidFilePath}
 
-	log.Notice("Attempting to load config from disk..")
+	log.Notice("Attempting to load config at %s", configFilePath)
 	// load config from disk
 	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
 	if err != nil {
-		log.Warning("Failed to read config from disk, loading example config...")
+		log.Notice("Did not find a config, loading example config...")
 		err = haConfig.GetConfigFromDisk("examples/example1.json")
 		if err != nil {
 			log.Warning("Could not load example file from disk...")
@@ -101,33 +101,32 @@ func main() {
 	// set the Pid file
 	done := haRuntime.SetPid(haConfig.PidFile)
 	if done == false {
-		log.Notice("Pidfile exists, proceeding...")
+		log.Notice("Pidfile exists at %s, proceeding...", pidFilePath)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
 
-	// start or reload 
+	// start or reload
 	err = haRuntime.Reload(&haConfig)
 	if err != nil {
 		log.Fatal("Error while reloading haproxy: " + err.Error())
 		os.Exit(1)
 	}
 
-/*
+	/*
 
-	Metric streaming setup
+		Metric streaming setup
 
-*/
+	*/
 
 	log.Notice("Initializing metric streams...")
 
 	// Initialize the stream from a runtime
-	stream.Init(&haRuntime,3000)
+	stream.Init(&haRuntime, 3000)
 	metricsChannel := make(chan metrics.Metric)
 
 	// push the metrics output into the metrics channel
 	go stream.Out(metricsChannel)
-
 
 	// Setup Kafka if required
 	if len(kafkaHost) > 0 {
@@ -140,52 +139,38 @@ func main() {
 
 	// Setup SSE Stream
 	sseBroker := &metrics.SSEBroker{
-    make(map[chan metrics.Metric]bool),
-    make(chan (chan metrics.Metric)),
-    make(chan (chan metrics.Metric)),
-    metricsChannel,
+		make(map[chan metrics.Metric]bool),
+		make(chan (chan metrics.Metric)),
+		make(chan (chan metrics.Metric)),
+		metricsChannel,
 	}
 
 	sseBroker.In(metricsChannel)
-  sseBroker.Start()
+	sseBroker.Start()
 
+	/*
 
-	// simple := metrics.SimpleProducer{}
-	// simple.In(metricsChannel)
-	// simple.Start()
+		Zookeeper setup
 
-/*
-
-	Zookeeper setup
-
-*/
+	*/
 
 	if len(zooConString) > 0 {
 
-				log.Notice("Initializing Zookeeper connection to " + zooConString +  zooConKey)
-				zkClient := zookeeper.ZkClient{}
-				err := zkClient.Init(zooConString, &haConfig, log)
+		log.Notice("Initializing Zookeeper connection to " + zooConString + zooConKey)
+		zkClient := zookeeper.ZkClient{}
+		err := zkClient.Init(zooConString, &haConfig, log)
 
-				if err != nil {
-					log.Error("Error initializing Zookeeper...")
-				}
-				zkClient.Watch(zooConKey)	
+		if err != nil {
+			log.Error("Error initializing Zookeeper...")
+		}
+		zkClient.Watch(zooConKey)
 	}
 
-/*
+	/*
 
-	Rest API setup
+		Rest API setup
 
-*/
-
-	// api.CreateSSE(sseBroker)
+	*/
 	log.Notice("Initializing REST Api...")
 	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker)
-	// router := api.Router{}
-	// router.Init(port, &haConfig, &haRuntime, log)
-}	
-
-
-
-
-
+}

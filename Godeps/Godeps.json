@@ -1,10 +1,25 @@
 {
 	"ImportPath": "github.com/magneticio/vamp-loadbalancer",
 	"GoVersion": "go1.4.1",
-	"Packages": [
-		"github.com/magneticio/vamp-loadbalancer"
-	],
 	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/snappy-go/snappy",
+			"Comment": "null-15",
+			"Rev": "12e4b4183793ac4b061921e7980845e750679fd0"
+		},
+		{
+			"ImportPath": "github.com/Shopify/sarama",
+			"Rev": "f503eb0f7b9756c36537436e28560e067013b59a"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin",
+			"Comment": "v0.4-16-g28b9ff9",
+			"Rev": "28b9ff9e3495dabeaea2da86c100effbf1a68346"
+		},
+		{
+			"ImportPath": "github.com/julienschmidt/httprouter",
+			"Rev": "00ce1c6a267162792c367acc43b1681a884e1872"
+		},
 		{
 			"ImportPath": "github.com/natefinch/lumberjack",
 			"Comment": "v1.0-12-gd28785c",
@@ -13,6 +28,10 @@
 		{
 			"ImportPath": "github.com/op/go-logging",
 			"Rev": "fb0230561a6ba1cab17beb95f1faedc16584fdb8"
+		},
+		{
+			"ImportPath": "github.com/samuel/go-zookeeper/zk",
+			"Rev": "9a466eec51e72221d972768a15f025bf096fc3e0"
 		}
 	]
 }

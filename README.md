@@ -17,16 +17,13 @@ Vamp-loadbalancers features are:
 -   Set HTTP & TCP Spike limiting *(experimental)*
 
 
-*Important* : Currently, HAproxy-rest does NOT check validity of the HAproxy command, ACLs and configs submitted to it.
-Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy
+*Important* : Currently, vamp-loadbalancer does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy
 
 ## Installing: the easy Docker way
 
 Start up an instance with all defaults and bind it to the local network interface
 
     $ docker run --net=host magneticio/vamp-loadbalancer:latest
-
-    13:00:31.035 main INFO ==>  
 
     ██╗   ██╗ █████╗ ███╗   ███╗██████╗
     ██║   ██║██╔══██╗████╗ ████║██╔══██╗
@@ -38,22 +35,23 @@ Start up an instance with all defaults and bind it to the local network interfac
                            version 0.1
                            by magnetic.io
                                           
-    13:00:31.035 main NOTI ==>  Attempting to load config from disk..
-    13:00:31.044 main NOTI ==>  Pidfile exists, proceeding...
-    13:00:31.048 main NOTI ==>  Initializing metric streams...
-    13:00:31.048 main NOTI ==>  Initializing REST Api...
-    [GIN-debug] PUT   /v1/backend/:name/server/:server --> github.com/magneticio/vamp-loadbalancer/api.func·001 (3 handlers)
-    [GIN-debug] POST  /v1/frontend/:name/acl/:acl/:pattern --> github.com/magneticio/vamp-loadbalancer/api.func·002 (3 handlers)
-    [GIN-debug] GET   /v1/frontend/:name/acls   --> github.com/magneticio/vamp-loadbalancer/api.func·003 (3 handlers)
-    [GIN-debug] GET   /v1/stats                 --> github.com/magneticio/vamp-loadbalancer/api.func·004 (3 handlers)
-    [GIN-debug] GET   /v1/stats/backend         --> github.com/magneticio/vamp-loadbalancer/api.func·005 (3 handlers)
-    [GIN-debug] GET   /v1/stats/frontend        --> github.com/magneticio/vamp-loadbalancer/api.func·006 (3 handlers)
-    [GIN-debug] GET   /v1/stats/server          --> github.com/magneticio/vamp-loadbalancer/api.func·007 (3 handlers)
-    [GIN-debug] GET   /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·008 (3 handlers)
-    [GIN-debug] POST  /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·009 (3 handlers)
-    [GIN-debug] GET   /v1/info                  --> github.com/magneticio/vamp-loadbalancer/api.func·010 (3 handlers)
-    [GIN-debug] Listening and serving HTTP on 0.0.0.0:10001
-    
+    19:21:01.746 main NOTI ==>  Attempting to load config at /tmp/haproxy_new.cfg
+    19:21:01.747 main NOTI ==>  Did not find a config, loading example config...
+    19:21:01.757 main NOTI ==>  Pidfile exists at /tmp/haproxy-private.pid, proceeding...
+    19:21:01.764 main NOTI ==>  Initializing metric streams...
+    19:21:01.765 main NOTI ==>  Initializing REST Api...
+    [GIN-debug] PUT   /v1/backend/:name/server/:server --> github.com/magneticio/vamp-loadbalancer/api.func·001 (5 handlers)
+    [GIN-debug] POST  /v1/frontend/:name/acl/:acl/:pattern --> github.com/magneticio/vamp-loadbalancer/api.func·002 (5 handlers)
+    [GIN-debug] GET   /v1/frontend/:name/acls   --> github.com/magneticio/vamp-loadbalancer/api.func·003 (5 handlers)
+    [GIN-debug] GET   /v1/stats                 --> github.com/magneticio/vamp-loadbalancer/api.func·004 (5 handlers)
+    [GIN-debug] GET   /v1/stats/backend         --> github.com/magneticio/vamp-loadbalancer/api.func·005 (5 handlers)
+    [GIN-debug] GET   /v1/stats/frontend        --> github.com/magneticio/vamp-loadbalancer/api.func·006 (5 handlers)
+    [GIN-debug] GET   /v1/stats/server          --> github.com/magneticio/vamp-loadbalancer/api.func·007 (5 handlers)
+    [GIN-debug] GET   /v1/stats/stream          --> github.com/magneticio/vamp-loadbalancer/api.func·008 (6 handlers)
+    [GIN-debug] GET   /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·009 (5 handlers)
+    [GIN-debug] POST  /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·010 (5 handlers)
+    [GIN-debug] GET   /v1/info                  --> github.com/magneticio/vamp-loadbalancer/api.func·011 (5 handlers)
+        
 The default ports are:
 
     10001      REST Api (for config, stats etc)  
