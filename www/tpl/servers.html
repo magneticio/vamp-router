@@ -1,0 +1,33 @@
+<div class="row servers-list">
+  <div class="col-md-12">
+    <p>servers</p>    
+    <ul class="list-unstyled list-inline">
+      <li ng-repeat="server in frontend.defaultBackend.servers" >
+        <table class="table table-condensed table-details table-servers">
+          <tbody>
+            <tr>
+              <td><strong>weight</strong></td>
+              <td>{{server.weight}}</td>              
+            </tr>
+            <tr>
+              <td><strong>name</strong></td>
+              <td>{{server.name}}</td>              
+            </tr>
+            <tr>
+              <td><strong>host</strong></td>
+              <td>{{server.host}}</td>              
+            </tr>
+            <tr>
+              <td><strong>port</strong></td>
+              <td>{{server.port}}</td>              
+            </tr>
+            <tr>
+              <td><strong>socket</strong></td>
+              <td>{{server.unixSock}}</td>              
+            </tr>                                                
+          </tbody> 
+        </table>
+      </li>
+    </ul>
+  </div>
+</div>

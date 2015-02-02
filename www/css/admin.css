@@ -1,0 +1,106 @@
+body { 
+    padding-top: 70px; 
+}
+
+.navbar {
+    min-height: 61px;
+}
+
+.box-shadow {
+    box-shadow: 0 2px 2px rgba(0,0,0,0.05),0 1px 0 rgba(0,0,0,0.05)
+} 
+
+.mouse-pointer {
+    cursor: pointer;
+}
+
+.table > thead > tr > th {
+  color: #16a085
+}
+
+.table > tbody > tr:hover {
+    background-color: #edf6fc;
+    transition: border .25s linear, color .25s linear, background-color .25s linear
+}
+
+
+
+.table .table-details > tbody > tr > td {
+  padding: 3px 0px;
+}
+
+.servers-list {
+  border: 2px solid #ecf0f1;
+  border-radius: 5px;
+  padding-left: 10px;
+  padding-top: 10px;
+}
+
+.servers-list > .list-inline, ul {
+  margin-bottom: 0px;
+}
+.table-servers {
+  width: 220px;
+}
+
+.table-details > tbody > tr > td > strong {
+  color: #16a085;
+}
+
+.table .table-details {
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.table > tbody > tr > td {
+  border-top: 0px
+}
+
+.table-details > tbody > tr > td {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-right: 0px;
+  font-size: 83%;
+}
+
+.table [class*="fui-"] {
+    vertical-align: baseline;
+    font-size: 15px;
+    margin: -5px 0;
+    position: relative;
+}
+
+h6 {
+  font-size: 20px
+}
+
+.muted {
+    font-size: 14px;
+    line-height: 1.286;
+    color: #34495e;
+    font-weight: lighter;
+}
+
+.m-l {
+  margin-left: 10px;
+}
+
+.m-r {
+  margin-left: 10px;
+}
+
+.m-t-o {
+  margin-top: 0px;
+}
+
+.m-o {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+
+.box {
+  padding: 8px;
+  background-color: #f7f7f9;
+  border: 1px solid #e1e1e8;
+}
+
