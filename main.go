@@ -143,6 +143,7 @@ func main() {
 		make(chan (chan metrics.Metric)),
 		make(chan (chan metrics.Metric)),
 		metricsChannel,
+		log,
 	}
 
 	sseBroker.In(metricsChannel)

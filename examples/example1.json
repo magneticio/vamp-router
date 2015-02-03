@@ -27,7 +27,8 @@
             "mode" : "http",
             "defaultBackend" : "test_be_1_a",
             "unixSock" : "/tmp/vamp_test_be_1_a.sock",
-            "sockProtocol" : "accept-proxy"
+            "sockProtocol" : "accept-proxy",
+            "acls" : []
         }
     ],
     "backends" : [
