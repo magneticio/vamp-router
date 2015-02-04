@@ -27,7 +27,7 @@ var (
 	zooConKey        string
 	pidFilePath      string
 	log              *gologger.Logger
-	version          = "0.1"
+	version          = "0.1.1"
 	stream           metrics.Streamer
 )
 
@@ -37,7 +37,7 @@ func init() {
 	flag.StringVar(&configFilePath, "lbConfigFile", "/tmp/haproxy_new.cfg", "Location of the target HAproxy config file")
 	flag.StringVar(&templateFilePath, "lbTemplate", "configuration/templates/haproxy_config.template", "Template file to build HAproxy load balancer config")
 	flag.StringVar(&jsonFilePath, "lbJson", "/tmp/vamp_loadbalancer.json", "JSON file to store internal config.")
-	flag.StringVar(&binaryPath, "binary", "/usr/local/sbin/haproxy", "Path to the HAproxy binary")
+	flag.StringVar(&binaryPath, "binary", "/usr/local/bin/haproxy", "Path to the HAproxy binary")
 	flag.BoolVar(&kafkaSwitch, "kafkaSwitch", false, "Switch whether to enable Kafka streaming")
 	flag.StringVar(&kafkaHost, "kafkaHost", "", "The hostname or ip address of the Kafka host")
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")

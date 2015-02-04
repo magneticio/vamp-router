@@ -9,6 +9,8 @@
 _obj
 _test
 _workspace
+target/linux_i386/vamp-loadbalancer
+
 
 # Architecture specific extensions/prefixes
 *.[568vq]
