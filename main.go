@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/magneticio/vamp-loadbalancer/api"
 	"github.com/magneticio/vamp-loadbalancer/haproxy"
+	"github.com/magneticio/vamp-loadbalancer/helpers"
 	"github.com/magneticio/vamp-loadbalancer/logging"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
 	"github.com/magneticio/vamp-loadbalancer/parsers"
@@ -37,7 +38,7 @@ func init() {
 	flag.StringVar(&configFilePath, "lbConfigFile", "/tmp/haproxy_new.cfg", "Location of the target HAproxy config file")
 	flag.StringVar(&templateFilePath, "lbTemplate", "configuration/templates/haproxy_config.template", "Template file to build HAproxy load balancer config")
 	flag.StringVar(&jsonFilePath, "lbJson", "/tmp/vamp_loadbalancer.json", "JSON file to store internal config.")
-	flag.StringVar(&binaryPath, "binary", "/usr/local/bin/haproxy", "Path to the HAproxy binary")
+	flag.StringVar(&binaryPath, "binary", helpers.HaproxyLocation(), "Path to the HAproxy binary")
 	flag.BoolVar(&kafkaSwitch, "kafkaSwitch", false, "Switch whether to enable Kafka streaming")
 	flag.StringVar(&kafkaHost, "kafkaHost", "", "The hostname or ip address of the Kafka host")
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")
