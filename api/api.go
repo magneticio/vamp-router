@@ -14,215 +14,44 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 	r.Use(HaproxyMiddleware(haConfig, haRuntime))
 	r.Use(LoggerMiddleware(log))
 	r.Use(gin.Recovery())
-	r.Static("/css", "./www/css")
-	r.Static("/images", "./www/images")
-	r.Static("/js", "./www/js")
-	r.Static("/fonts", "./www/fonts")
-	r.Static("/tpl", "./www/tpl")
+	r.Static("/www", "./www")
 	v1 := r.Group("/v1")
 
 	{
 		r.GET("/", func(c *gin.Context) {
-			c.File("www/index.html")
-		})
-		/*
-		   Backend Actions
-		*/
-		v1.PUT("/backend/:name/server/:server", func(c *gin.Context) {
-
-			var json UpdateWeight
-			config := c.MustGet("haConfig").(*haproxy.Config)
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-
-			valid := c.Bind(&json)
-			if valid != true {
-				c.String(500, "Invalid Json")
-			} else {
-
-				backend := c.Params.ByName("name")
-				server := c.Params.ByName("server")
-
-				status, err := runtime.SetWeight(backend, server, json.Weight)
-
-				// check on Runtime errors
-				if err != nil {
-					c.String(500, err.Error())
-				} else {
-
-					switch status {
-					case "No such server.\n\n":
-						c.String(404, status)
-					case "No such backend.\n\n":
-						c.String(404, status)
-					default:
-
-						//update the config object with the new weight
-						err = config.SetWeight(backend, server, json.Weight)
-						if err != nil {
-							c.String(500, err.Error())
-						} else {
-							c.String(200, "Ok")
-						}
-					}
-				}
-			}
+			c.Redirect(301, "www/index.html")
 		})
 
 		/*
-		   Frontend Actions
+		   Backend
 		*/
-
-		v1.POST("frontend/:name/acl/:acl/:pattern", func(c *gin.Context) {
-
-			backend := c.Params.ByName("name")
-			acl := c.Params.ByName("acl")
-			pattern := c.Params.ByName("pattern")
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-
-			status, err := runtime.SetAcl(backend, acl, pattern)
-
-			// check on Runtime errors
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				switch status {
-				case "No such backend.\n\n":
-					c.String(404, status)
-				default:
-
-					//update the config object with the new acl
-					//err = UpdateWeightInConfig(backend, server, weight, ConfigObj)
-					c.String(200, "Ok")
-				}
-			}
-		})
-
-		v1.GET("/frontend/:name/acls", func(c *gin.Context) {
-
-			frontend := c.Params.ByName("name")
-			config := c.MustGet("haConfig").(*haproxy.Config)
-
-			status := config.GetAcls(frontend)
-			c.JSON(200, status)
-
-		})
+		v1.PUT("/backend/:name/server/:server", PutBackendWeight)
 
 		/*
-
-		   Stats Actions
-
+		   Frontend
 		*/
+		v1.POST("frontend/:name/acl/:acl/:pattern", PostAclPattern)
+		v1.GET("/frontend/:name/acls", GetACLs)
 
-		// get standard stats output from haproxy
-		v1.GET("/stats", func(c *gin.Context) {
-
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-			status, err := runtime.GetStats("all")
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				c.JSON(200, status)
-			}
-
-		})
-		v1.GET("/stats/backend", func(c *gin.Context) {
-
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-			status, err := runtime.GetStats("backend")
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				c.JSON(200, status)
-			}
-
-		})
-
-		v1.GET("/stats/frontend", func(c *gin.Context) {
-
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-			status, err := runtime.GetStats("frontend")
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				c.JSON(200, status)
-			}
-
-		})
-		v1.GET("/stats/server", func(c *gin.Context) {
-
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-			status, err := runtime.GetStats("server")
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				c.JSON(200, status)
-			}
-
-		})
-		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), func(c *gin.Context) {
-
-			sseBroker := c.MustGet("sseBroker").(*metrics.SSEBroker)
-			sseBroker.ServeHTTP(c.Writer, c.Request)
-
-		})
+		/*
+		   Stats
+		*/
+		v1.GET("/stats", GetAllStats)
+		v1.GET("/stats/backend", GetBackendStats)
+		v1.GET("/stats/frontend", GetFrontendStats)
+		v1.GET("/stats/server", GetServerStats)
+		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
 
 		/*
 		   Full Config Actions
 		*/
-
-		// get config file
-		v1.GET("/config", func(c *gin.Context) {
-			config := c.MustGet("haConfig").(*haproxy.Config)
-			c.JSON(200, config)
-		})
-
-		// set config file
-		v1.POST("/config", func(c *gin.Context) {
-
-			config := c.MustGet("haConfig").(*haproxy.Config)
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-
-			valid := c.Bind(&config)
-
-			if valid != true {
-				c.String(500, "Invalid JSON")
-
-			}
-
-			if valid == true {
-				err := config.RenderAndPersist()
-				if err != nil {
-					c.String(500, "Error rendering config file")
-					return
-				} else {
-					err = runtime.Reload(config)
-					if err != nil {
-						c.String(500, "Error reloading the HAproxy configuration")
-						return
-					} else {
-						c.String(200, "Ok")
-					}
-
-				}
-			}
-		})
+		v1.GET("/config", GetConfig)
+		v1.POST("/config", PostConfig)
 
 		/*
 		   Info
 		*/
-
-		// get info on running process
-		v1.GET("/info", func(c *gin.Context) {
-
-			runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-			status, err := runtime.GetInfo()
-			if err != nil {
-				c.String(500, err.Error())
-			} else {
-				c.JSON(200, status)
-			}
-
-		})
+		v1.GET("/info", GetInfo)
 	}
 
 	// Listen and server on port
