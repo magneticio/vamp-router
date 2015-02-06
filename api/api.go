@@ -23,23 +23,27 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		})
 
 		/*
-		   Backend
-		*/
-		v1.PUT("/backend/:name/server/:server", PutBackendWeight)
-
-		/*
 		   Frontend
 		*/
-		v1.POST("frontend/:name/acl/:acl/:pattern", PostAclPattern)
-		v1.GET("/frontend/:name/acls", GetACLs)
+		v1.POST("frontends/:name/acls", PostFrontendACL)
+		v1.GET("/frontends/:name/acls", GetFrontendACLs)
+		v1.GET("/frontends/:name", GetFrontend)
+		v1.DELETE("/frontends/:name", DeleteFrontend)
+		v1.POST("/frontends", PostFrontend)
+
+		/*
+		   Backend
+		*/
+		v1.PUT("/backends/:name/servers/:server", PutBackendWeight)
+		v1.GET("/backends/:name", GetBackend)
 
 		/*
 		   Stats
 		*/
 		v1.GET("/stats", GetAllStats)
-		v1.GET("/stats/backend", GetBackendStats)
-		v1.GET("/stats/frontend", GetFrontendStats)
-		v1.GET("/stats/server", GetServerStats)
+		v1.GET("/stats/backends", GetBackendStats)
+		v1.GET("/stats/frontends", GetFrontendStats)
+		v1.GET("/stats/servers", GetServerStats)
 		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
 
 		/*
