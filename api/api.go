@@ -25,8 +25,10 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		/*
 		   Frontend
 		*/
+		v1.GET("/frontends", GetFrontends)
 		v1.POST("frontends/:name/acls", PostFrontendACL)
 		v1.GET("/frontends/:name/acls", GetFrontendACLs)
+		v1.DELETE("/frontends/:name/acls/:acl_name", DeleteFrontendACL)
 		v1.GET("/frontends/:name", GetFrontend)
 		v1.DELETE("/frontends/:name", DeleteFrontend)
 		v1.POST("/frontends", PostFrontend)
@@ -34,8 +36,12 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		/*
 		   Backend
 		*/
-		v1.PUT("/backends/:name/servers/:server", PutBackendWeight)
+		v1.GET("/backends", GetBackends)
 		v1.GET("/backends/:name", GetBackend)
+		v1.GET("/backends/:name/servers", GetServers)
+		v1.GET("/backends/:name/servers/:server", GetServer)
+		v1.PUT("/backends/:name/servers/:server", PutServerWeight)
+		v1.DELETE("/backends/:name/servers/:server", DeleteServer)
 
 		/*
 		   Stats
@@ -47,7 +53,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
 
 		/*
-		   Full Config Actions
+		   Config
 		*/
 		v1.GET("/config", GetConfig)
 		v1.POST("/config", PostConfig)
@@ -61,4 +67,23 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 	// Listen and server on port
 	r.Run("0.0.0.0:" + strconv.Itoa(port))
 
+}
+
+func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
+
+	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
+
+	err := config.RenderAndPersist()
+	if err != nil {
+		c.String(500, "Error rendering config file")
+		return
+	}
+
+	err = runtime.Reload(config)
+	if err != nil {
+		c.String(500, "Error reloading the HAproxy configuration")
+		return
+	}
+
+	c.String(status, message)
 }

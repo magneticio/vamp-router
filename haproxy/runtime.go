@@ -11,8 +11,10 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	//"os/signal"
 	"strconv"
 	"strings"
+	//"syscall"
 )
 
 func (r *Runtime) SetPid(pidfile string) bool {
@@ -30,7 +32,27 @@ func (r *Runtime) SetPid(pidfile string) bool {
 // Reload runtime with configuration
 func (r *Runtime) Reload(c *Config) error {
 
-	var out bytes.Buffer
+	// Fix for zombie processes kindly provided by https://github.com/QubitProducts/bamboo/issues/31
+	// Wait for died children to avoid zombies
+	// signalChannel := make(chan os.Signal, 2)
+	// signal.Notify(signalChannel, syscall.SIGCHLD)
+
+	// go func() {
+	// 	sig := <-signalChannel
+	// 	if sig == syscall.SIGCHLD {
+	// 		r := syscall.Rusage{}
+	// 		for {
+	// 			pid, err := syscall.Wait4(-1, nil, 0, &r)
+	// 			pidstring := strconv.Itoa(pid)
+	// 			if err != nil {
+	// 				// fmt.Println("The following pid was already dead... " + pidstring)
+	// 			} else {
+	// 				fmt.Println("Successfully waited for pid " + pidstring + " to die!")
+	// 			}
+	// 		}
+	// 	}
+	// }()
+
 	pid, err := ioutil.ReadFile(c.PidFile)
 	if err != nil {
 		return err
@@ -57,6 +79,7 @@ func (r *Runtime) Reload(c *Config) error {
 		cmd = exec.Command(r.Binary, arg0, arg1, arg2, arg3, arg4)
 	}
 
+	var out bytes.Buffer
 	cmd.Stdout = &out
 
 	cmdErr := cmd.Run()

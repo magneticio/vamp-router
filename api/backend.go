@@ -5,27 +5,75 @@ import (
 	"github.com/magneticio/vamp-loadbalancer/haproxy"
 )
 
-func PutBackendWeight(c *gin.Context) {
+func GetBackends(c *gin.Context) {
+
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	result := config.GetBackends()
+	if result != nil {
+		c.JSON(200, result)
+	} else {
+		c.String(404, "no backends found")
+	}
+
+}
+
+func GetBackend(c *gin.Context) {
+
+	backend := c.Params.ByName("name")
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	result := config.GetBackend(backend)
+	if result != nil {
+		c.JSON(200, result)
+	} else {
+		c.String(404, "no such backend")
+	}
+
+}
+
+func GetServers(c *gin.Context) {
+
+	backend := c.Params.ByName("name")
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	result := config.GetServers(backend)
+	if result != nil {
+		c.JSON(200, result)
+	} else {
+		c.String(404, "no such server")
+	}
+}
+
+func GetServer(c *gin.Context) {
+
+	backend := c.Params.ByName("name")
+	server := c.Params.ByName("server")
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	result := config.GetServer(backend, server)
+	if result != nil {
+		c.JSON(200, result)
+	} else {
+		c.String(404, "no such server")
+	}
+}
+
+func PutServerWeight(c *gin.Context) {
 
 	var json UpdateWeight
 	config := c.MustGet("haConfig").(*haproxy.Config)
 	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
+	backend := c.Params.ByName("name")
+	server := c.Params.ByName("server")
 
-	valid := c.Bind(&json)
-	if valid != true {
-		c.String(500, "Invalid Json")
-	} else {
-
-		backend := c.Params.ByName("name")
-		server := c.Params.ByName("server")
-
+	if c.Bind(&json) {
 		status, err := runtime.SetWeight(backend, server, json.Weight)
 
 		// check on Runtime errors
 		if err != nil {
 			c.String(500, err.Error())
 		} else {
-
 			switch status {
 			case "No such server.\n\n":
 				c.String(404, status)
@@ -38,9 +86,25 @@ func PutBackendWeight(c *gin.Context) {
 				if err != nil {
 					c.String(500, err.Error())
 				} else {
-					c.String(200, "Ok")
+					HandleReload(c, config, 200, "updated server weight")
 				}
 			}
 		}
+	} else {
+		c.String(500, "Invalid JSON")
+	}
+}
+
+func DeleteServer(c *gin.Context) {
+
+	backend := c.Params.ByName("name")
+	server := c.Params.ByName("server")
+
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	if config.DeleteServer(backend, server) {
+		HandleReload(c, config, 200, "deleted server")
+	} else {
+		c.String(404, "no such server")
 	}
 }

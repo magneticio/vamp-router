@@ -13,29 +13,10 @@ func GetConfig(c *gin.Context) {
 func PostConfig(c *gin.Context) {
 
 	config := c.MustGet("haConfig").(*haproxy.Config)
-	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
 
-	valid := c.Bind(&config)
-
-	if valid != true {
+	if c.Bind(&config) {
+		HandleReload(c, config, 200, "updated config")
+	} else {
 		c.String(500, "Invalid JSON")
-
-	}
-
-	if valid == true {
-		err := config.RenderAndPersist()
-		if err != nil {
-			c.String(500, "Error rendering config file")
-			return
-		} else {
-			err = runtime.Reload(config)
-			if err != nil {
-				c.String(500, "Error reloading the HAproxy configuration")
-				return
-			} else {
-				c.String(200, "Ok")
-			}
-
-		}
 	}
 }
