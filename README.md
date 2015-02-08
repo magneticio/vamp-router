@@ -23,6 +23,8 @@ Vamp-loadbalancers features are:
 
 Start up an instance with all defaults and bind it to the local network interface
 
+```Bash
+
     $ docker run --net=host magneticio/vamp-loadbalancer:latest
 
     ██╗   ██╗ █████╗ ███╗   ███╗██████╗
@@ -51,6 +53,7 @@ Start up an instance with all defaults and bind it to the local network interfac
     [GIN-debug] GET   /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·009 (5 handlers)
     [GIN-debug] POST  /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·010 (5 handlers)
     [GIN-debug] GET   /v1/info                  --> github.com/magneticio/vamp-loadbalancer/api.func·011 (5 handlers)
+```
         
 The default ports are:
 
