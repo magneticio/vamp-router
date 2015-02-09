@@ -28,7 +28,7 @@ var (
 	zooConKey        string
 	pidFilePath      string
 	log              *gologger.Logger
-	version          = "0.1.1"
+	version          = "0.2.0"
 	stream           metrics.Streamer
 )
 
@@ -173,6 +173,6 @@ func main() {
 		Rest API setup
 
 	*/
-	log.Notice("Initializing REST Api...")
+	log.Notice("Initializing REST API...")
 	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker)
 }

@@ -10,9 +10,12 @@ import (
 
 func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, log *gologger.Logger, SSEBroker *metrics.SSEBroker) {
 
+	gin.SetMode("release")
+
 	r := gin.New()
 	r.Use(HaproxyMiddleware(haConfig, haRuntime))
 	r.Use(LoggerMiddleware(log))
+	r.Use(SSEMiddleware(SSEBroker))
 	r.Use(gin.Recovery())
 	r.Static("/www", "./www")
 	v1 := r.Group("/v1")
@@ -51,7 +54,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.GET("/stats/backends", GetBackendStats)
 		v1.GET("/stats/frontends", GetFrontendStats)
 		v1.GET("/stats/servers", GetServerStats)
-		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
+		v1.GET("/stats/stream", GetSSEStream)
 
 		/*
 		   Config
@@ -75,7 +78,6 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 
 	// Listen and server on port
 	r.Run("0.0.0.0:" + strconv.Itoa(port))
-
 }
 
 func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
