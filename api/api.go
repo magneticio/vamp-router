@@ -15,7 +15,6 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 	r := gin.New()
 	r.Use(HaproxyMiddleware(haConfig, haRuntime))
 	r.Use(LoggerMiddleware(log))
-	r.Use(SSEMiddleware(SSEBroker))
 	r.Use(gin.Recovery())
 	r.Static("/www", "./www")
 	v1 := r.Group("/v1")
@@ -54,7 +53,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.GET("/stats/backends", GetBackendStats)
 		v1.GET("/stats/frontends", GetFrontendStats)
 		v1.GET("/stats/servers", GetServerStats)
-		v1.GET("/stats/stream", GetSSEStream)
+		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
 
 		/*
 		   Config
