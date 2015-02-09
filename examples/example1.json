@@ -125,5 +125,25 @@
                 "transparent" :  false
             }
         }
+    ],
+    "routes" : [
+        {
+            "name" : "test_route_1",
+            "mode" : "http",
+            "endpoint" : 9021,
+            "paths" : [
+                {
+                    "name"     : "a",
+                    "frontend" : "test_fe_1_a",
+                    "backend"  : "test_be_1_a"
+                },
+                {
+                    "name"     : "b",
+                    "frontend" : "test_fe_1_b",
+                    "backend"  : "test_be_1_b"
+                }
+            ]
+
+        }
     ]
 }

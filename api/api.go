@@ -59,6 +59,14 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.POST("/config", PostConfig)
 
 		/*
+			Routes
+		*/
+		v1.GET("/routes", GetRoutes)
+		v1.GET("/routes/:name", GetRoute)
+		v1.POST("/routes", PostRoute)
+		v1.DELETE("/routes/:name", DeleteRoute)
+
+		/*
 		   Info
 		*/
 		v1.GET("/info", GetInfo)

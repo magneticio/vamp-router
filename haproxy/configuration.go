@@ -182,6 +182,23 @@ func (c *Config) GetBackends() []*Backend {
 	return c.Backends
 }
 
+// deletes a backend
+func (c *Config) DeleteBackend(name string) bool {
+
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
+	result := false
+
+	for i, be := range c.Backends {
+		if be.Name == name {
+			c.Backends = append(c.Backends[:i], c.Backends[i+1:]...)
+			result = true
+			break
+		}
+	}
+	return result
+}
+
 func (c *Config) GetServer(backendName string, serverName string) *BackendServer {
 
 	c.Mutex.RLock()
@@ -237,6 +254,15 @@ func (c *Config) GetServers(backendName string) []*BackendServer {
 		}
 	}
 	return result
+}
+
+// gets all routes
+func (c *Config) GetRoutes() []*Route {
+
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
+
+	return c.Routes
 }
 
 // Render a config object to a HAproxy config file

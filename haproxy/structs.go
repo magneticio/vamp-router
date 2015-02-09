@@ -9,11 +9,31 @@ type Runtime struct {
 	Binary string
 }
 
+type Route struct {
+	Name           string    `json:"name" binding: "required"`
+	StableFrontend *Frontend `json:"stableFrontend" binding: "required"`
+	StableBackend  *Backend  `json:"stableBackend" binding: "required"`
+	// Paths    []*Path 							`json:"paths" binding: "required"`
+}
+
+type NewRoute struct {
+	Name     string `json:"name" binding: "required"`
+	Mode     string `json:"mode" binding: "required"`
+	Endpoint int    `json:"endpoint" binding: "required"`
+}
+
+type Path struct {
+	Name     string `json:"name" binding: "required"`
+	Frontend string `json:"frontend" binding: "required"`
+	Backend  string `json:"backend" binding: "required"`
+}
+
 // Main configuration object for load balancers. This contains all variables and is passed to
 // the templating engine.
 type Config struct {
 	Frontends    []*Frontend   `json:"frontends" binding:"required"`
 	Backends     []*Backend    `json:"backends" binding:"required"`
+	Routes       []*Route      `json:"routes" binding:"required"`
 	PidFile      string        `json:"-"`
 	Mutex        *sync.RWMutex `json:"-"`
 	TemplateFile string        `json:"-"`
