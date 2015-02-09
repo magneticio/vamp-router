@@ -29,13 +29,13 @@ func (c *Config) AddRoute(newRoute *NewRoute) error {
 	stableServerA := defaultSocketProxyServer(newRoute.Name, "a", 100)
 	stableServerB := defaultSocketProxyServer(newRoute.Name, "b", 0)
 
-	backendA := defaultBackend(newRoute.Name, "a", newRoute.Mode, []*BackendServer{})
-	backendB := defaultBackend(newRoute.Name, "b", newRoute.Mode, []*BackendServer{})
+	backendA := defaultBackend(newRoute.Name, "a", newRoute.Mode, false, []*BackendServer{})
+	backendB := defaultBackend(newRoute.Name, "b", newRoute.Mode, false, []*BackendServer{})
 
 	frontendA := defaultSocketProxyFrontend(newRoute.Name, "a", newRoute.Mode, stableServerA.UnixSock, backendA)
 	frontendB := defaultSocketProxyFrontend(newRoute.Name, "b", newRoute.Mode, stableServerB.UnixSock, backendB)
 
-	stableBackend := defaultBackend(newRoute.Name, "", newRoute.Mode, []*BackendServer{stableServerA, stableServerB})
+	stableBackend := defaultBackend(newRoute.Name, "", newRoute.Mode, true, []*BackendServer{stableServerA, stableServerB})
 	stableFrontend := defaultFrontend(newRoute.Name, newRoute.Mode, newRoute.Endpoint, stableBackend)
 
 	// add everything to the config for haproxy
@@ -137,7 +137,7 @@ func defaultServer(name string, group string, weight int, host string, port int)
 	}
 }
 
-func defaultBackend(name string, group string, mode string, servers []*BackendServer) *Backend {
+func defaultBackend(name string, group string, mode string, proxy bool, servers []*BackendServer) *Backend {
 	var postfix string
 	if group == "" {
 		postfix = "_be"
@@ -149,7 +149,7 @@ func defaultBackend(name string, group string, mode string, servers []*BackendSe
 		Mode:           mode,
 		BackendServers: servers,
 		Options:        ProxyOptions{},
-		ProxyMode:      true,
+		ProxyMode:      proxy,
 	}
 }
 
