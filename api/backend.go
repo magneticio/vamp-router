@@ -59,6 +59,24 @@ func GetServer(c *gin.Context) {
 	}
 }
 
+func PostServer(c *gin.Context) {
+
+	var server haproxy.BackendServer
+	backend := c.Params.ByName("name")
+	config := c.MustGet("haConfig").(*haproxy.Config)
+
+	if c.Bind(&server) {
+		result := config.AddServer(backend, &server)
+		if result {
+			HandleReload(c, config, 201, "created server")
+		} else {
+			c.String(404, "no such backenbd")
+		}
+	} else {
+		c.String(500, "Invalid JSON")
+	}
+}
+
 func PutServerWeight(c *gin.Context) {
 
 	var json UpdateWeight

@@ -41,6 +41,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.GET("/backends/:name/servers", GetServers)
 		v1.GET("/backends/:name/servers/:server", GetServer)
 		v1.PUT("/backends/:name/servers/:server", PutServerWeight)
+		v1.POST("/backends/:name/servers", PostServer)
 		v1.DELETE("/backends/:name/servers/:server", DeleteServer)
 
 		/*

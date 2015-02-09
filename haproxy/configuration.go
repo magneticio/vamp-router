@@ -75,7 +75,7 @@ func (c *Config) GetFrontend(name string) *Frontend {
 	return result
 }
 
-// gets a frontend
+// adds a frontend
 func (c *Config) AddFrontend(frontend *Frontend) error {
 
 	c.Mutex.RLock()
@@ -214,6 +214,24 @@ func (c *Config) GetServer(backendName string, serverName string) *BackendServer
 					break
 				}
 			}
+		}
+	}
+	return result
+}
+
+// adds a Server
+func (c *Config) AddServer(backendName string, server *BackendServer) bool {
+
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
+
+	result := false
+
+	for _, be := range c.Backends {
+		if be.Name == backendName {
+			be.BackendServers = append(be.BackendServers, server)
+			result = true
+			break
 		}
 	}
 	return result
