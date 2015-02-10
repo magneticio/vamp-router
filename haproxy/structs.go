@@ -13,13 +13,18 @@ type Route struct {
 	Name           string    `json:"name" binding: "required"`
 	StableFrontend *Frontend `json:"stableFrontend" binding: "required"`
 	StableBackend  *Backend  `json:"stableBackend" binding: "required"`
-	// Paths    []*Path 							`json:"paths" binding: "required"`
 }
 
 type NewRoute struct {
-	Name     string `json:"name" binding: "required"`
-	Mode     string `json:"mode" binding: "required"`
-	Endpoint int    `json:"endpoint" binding: "required"`
+	Name     string             `json:"name" binding: "required"`
+	Mode     string             `json:"mode" binding: "required"`
+	Endpoint int                `json:"endpoint" binding: "required"`
+	Servers  []*NewSimpleServer `json:"servers"`
+}
+
+type NewSimpleServer struct {
+	Host string `json:"host" binding: "required"`
+	Port int    `json:"port" binding: "required"`
 }
 
 type Path struct {

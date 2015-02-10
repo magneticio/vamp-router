@@ -1,5 +1,9 @@
 package haproxy
 
+import (
+	"strconv"
+)
+
 /*
 
   AddRoutes is a convenience method to create a set of frontends, backends etc.that together form what we
@@ -25,12 +29,21 @@ func (c *Config) AddRoute(newRoute *NewRoute) error {
 
 	// we create the routes structure by starting "at the back": the a/b servers that use socket
 	// to direct traffic to frontends listening on those sockets
-
-	stableServerA := defaultSocketProxyServer(newRoute.Name, "a", 100)
-	stableServerB := defaultSocketProxyServer(newRoute.Name, "b", 0)
+	stableServerA := defaultSocketProxyServer(newRoute.Name+"_stable_srv_a", 100)
+	stableServerB := defaultSocketProxyServer(newRoute.Name+"_stable_srv_b", 0)
 
 	backendA := defaultBackend(newRoute.Name, "a", newRoute.Mode, false, []*BackendServer{})
 	backendB := defaultBackend(newRoute.Name, "b", newRoute.Mode, false, []*BackendServer{})
+
+	// if any initial servers are provided, we add them to backendA
+	if len(newRoute.Servers) > 0 {
+
+		for i, srv := range newRoute.Servers {
+			name := newRoute.Name + "_grp_a" + "_srv_" + strconv.Itoa(i+1)
+			newSrv := defaultServer(name, 100, srv.Host, srv.Port)
+			backendA.BackendServers = append(backendA.BackendServers, newSrv)
+		}
+	}
 
 	frontendA := defaultSocketProxyFrontend(newRoute.Name, "a", newRoute.Mode, stableServerA.UnixSock, backendA)
 	frontendB := defaultSocketProxyFrontend(newRoute.Name, "b", newRoute.Mode, stableServerB.UnixSock, backendB)
@@ -44,6 +57,7 @@ func (c *Config) AddRoute(newRoute *NewRoute) error {
 		StableFrontend: stableFrontend,
 		StableBackend:  stableBackend,
 	}
+
 	c.Routes = append(c.Routes, &route)
 
 	feCollection := []*Frontend{stableFrontend, frontendA, frontendB}
@@ -111,12 +125,12 @@ func (c *Config) GetRoute(name string) *Route {
 	return result
 }
 
-func defaultSocketProxyServer(name string, group string, weight int) *BackendServer {
+func defaultSocketProxyServer(name string, weight int) *BackendServer {
 	return &BackendServer{
-		Name:          name + "_srv_" + group,
+		Name:          name,
 		Host:          "",
 		Port:          0,
-		UnixSock:      "/tmp/" + name + "_srv_" + group + ".sock",
+		UnixSock:      "/tmp/" + name + ".sock",
 		Weight:        weight,
 		MaxConn:       1000,
 		Check:         false,
@@ -124,9 +138,9 @@ func defaultSocketProxyServer(name string, group string, weight int) *BackendSer
 	}
 }
 
-func defaultServer(name string, group string, weight int, host string, port int) *BackendServer {
+func defaultServer(name string, weight int, host string, port int) *BackendServer {
 	return &BackendServer{
-		Name:          name + "_srv_" + group,
+		Name:          name,
 		Host:          host,
 		Port:          port,
 		UnixSock:      "",
