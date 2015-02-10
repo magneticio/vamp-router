@@ -1,9 +1,12 @@
 angular.module('vampLoadbalancer', [
+  'ngTable',
+  'ngResource',
   'vampLoadbalancer.controllers'
 ]);
 angular.module('vampLoadbalancer.controllers', [])
-  .controller('mainController',['$scope','$http',function($scope, $http) {
-    
+  .controller('mainController',['$scope', '$http', function($scope, $http, ngTableParams) {
+
+
     $http.get('/v1/config')
       .success(function (data){
         $scope.config = data
