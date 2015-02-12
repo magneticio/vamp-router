@@ -27,8 +27,8 @@ func (c *Config) GetConfigFromDisk(file string) error {
 // updates the weight of a server of a specific backend with a new weight
 func (c *Config) SetWeight(backend string, server string, weight int) error {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	for _, be := range c.Backends {
 		if be.Name == backend {
@@ -78,8 +78,8 @@ func (c *Config) GetFrontend(name string) *Frontend {
 // adds a frontend
 func (c *Config) AddFrontend(frontend *Frontend) error {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	c.Frontends = append(c.Frontends, frontend)
 
@@ -90,8 +90,8 @@ func (c *Config) AddFrontend(frontend *Frontend) error {
 // deletes a frontend
 func (c *Config) DeleteFrontend(name string) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	result := false
 
 	for i, fe := range c.Frontends {
@@ -124,8 +124,8 @@ func (c *Config) GetAcls(frontend string) []*ACL {
 // get the acls from a frontend
 func (c *Config) AddAcl(frontend string, acl *ACL) {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	for _, fe := range c.Frontends {
 		if fe.Name == frontend {
@@ -137,8 +137,8 @@ func (c *Config) AddAcl(frontend string, acl *ACL) {
 // delete an ACL from a frontend
 func (c *Config) DeleteAcl(frontendName string, aclName string) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	result := false
 
 	for _, fe := range c.Frontends {
@@ -185,8 +185,8 @@ func (c *Config) GetBackends() []*Backend {
 // deletes a backend
 func (c *Config) DeleteBackend(name string) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	result := false
 
 	for i, be := range c.Backends {
@@ -222,8 +222,8 @@ func (c *Config) GetServer(backendName string, serverName string) *BackendServer
 // adds a Server
 func (c *Config) AddServer(backendName string, server *BackendServer) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	result := false
 
@@ -239,8 +239,8 @@ func (c *Config) AddServer(backendName string, server *BackendServer) bool {
 
 func (c *Config) DeleteServer(backendName string, serverName string) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	result := false
 
 	for _, be := range c.Backends {
@@ -324,8 +324,8 @@ func (c *Config) Persist() error {
 
 func (c *Config) RenderAndPersist() error {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	err := c.Render()
 	if err != nil {

@@ -24,8 +24,8 @@ import (
 
 func (c *Config) AddRoute(newRoute *NewRoute) error {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
 	// we create the routes structure by starting "at the back": the a/b servers that use socket
 	// to direct traffic to frontends listening on those sockets
@@ -77,8 +77,6 @@ func (c *Config) AddRoute(newRoute *NewRoute) error {
 // frontends, backends and servers.
 func (c *Config) DeleteRoute(name string) bool {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 	result := false
 
 	// first find the route
