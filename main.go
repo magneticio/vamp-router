@@ -11,6 +11,7 @@ import (
 	"github.com/magneticio/vamp-loadbalancer/zookeeper"
 	gologger "github.com/op/go-logging"
 	"os"
+	"strconv"
 )
 
 var (
@@ -174,5 +175,6 @@ func main() {
 
 	*/
 	log.Notice("Initializing REST API...")
-	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker)
+	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker).Run("0.0.0.0:" + strconv.Itoa(port))
+
 }

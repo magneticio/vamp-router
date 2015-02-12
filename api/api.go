@@ -5,10 +5,9 @@ import (
 	"github.com/magneticio/vamp-loadbalancer/haproxy"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
 	gologger "github.com/op/go-logging"
-	"strconv"
 )
 
-func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, log *gologger.Logger, SSEBroker *metrics.SSEBroker) {
+func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, log *gologger.Logger, SSEBroker *metrics.SSEBroker) *gin.Engine {
 
 	gin.SetMode("release")
 
@@ -75,8 +74,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.GET("/info", GetInfo)
 	}
 
-	// Listen and server on port
-	r.Run("0.0.0.0:" + strconv.Itoa(port))
+	return r
 }
 
 func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
