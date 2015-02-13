@@ -23,6 +23,14 @@
             }
         },
         {
+            "name" : "test_fe_2",
+            "bindPort" : 8001,
+            "bindIp" : "0.0.0.0",
+            "defaultBackend" : "test_be_1",
+            "mode" : "http",
+            "acls" : []
+        },
+        {
             "name" : "test_fe_1_a",
             "mode" : "http",
             "defaultBackend" : "test_be_1_a",

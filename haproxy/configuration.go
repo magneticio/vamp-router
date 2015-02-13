@@ -40,11 +40,6 @@ func (c *Config) SetWeight(backend string, server string, weight int) error {
 		}
 	}
 
-	err := c.RenderAndPersist()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -122,7 +117,7 @@ func (c *Config) GetAcls(frontend string) []*ACL {
 }
 
 // get the acls from a frontend
-func (c *Config) AddAcl(frontend string, acl *ACL) {
+func (c *Config) AddAcl(frontend string, acl *ACL) error {
 
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
@@ -132,6 +127,7 @@ func (c *Config) AddAcl(frontend string, acl *ACL) {
 			fe.ACLs = append(fe.ACLs, acl)
 		}
 	}
+	return nil
 }
 
 // delete an ACL from a frontend

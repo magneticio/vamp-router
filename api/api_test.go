@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-loadbalancer/haproxy"
 	"github.com/magneticio/vamp-loadbalancer/helpers"
+	"github.com/magneticio/vamp-loadbalancer/logging"
+	gologger "github.com/op/go-logging"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,24 +20,18 @@ const (
 )
 
 var (
-	haConfig  = *haproxy.Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
-	haRuntime = *haproxy.Runtime{Binary: helpers.HaproxyLocation()}
-	r         = gin.New()
+	haConfig  = haproxy.Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
+	haRuntime = haproxy.Runtime{Binary: helpers.HaproxyLocation()}
+	log       = logging.ConfigureLog(LOG_PATH)
 )
 
-func init() {
-	r.Use(HaproxyMiddleware(haConfig, haRuntime))
-	r.Use(LoggerMiddleware(log.Logger))
-	r.Use(gin.Recovery())
-	r.Static("/www", "./www")
-	v1 := r.Group("/v1")
-}
-
 func TestApi_GetConfig(t *testing.T) {
+
+	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker).Run("0.0.0.0:" + strconv.Itoa(port))
+
 	req, _ := http.NewRequest("GET", "/v1/config", nil)
 	w := httptest.NewRecorder()
 
-	v1.GET("/v1/config", GetFrontends)
 	v1.ServeHTTP(w, req)
 
 	if w.Body.String() != "{\"frontends\":\"[]\"}\n" {

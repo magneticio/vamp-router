@@ -23,7 +23,7 @@ func GetFrontend(c *gin.Context) {
 	frontend := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	result := config.GetFrontend(frontend)
+	result, err := config.GetFrontend(frontend)
 	if result != nil {
 		c.JSON(200, result)
 	} else {

@@ -30,5 +30,6 @@ _testmain.go
 .idea
 *.iml
 out
+.out
 *.pid
 .DS_Store
