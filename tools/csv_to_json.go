@@ -1,4 +1,4 @@
-package parsers
+package tools
 
 import (
 	"bytes"

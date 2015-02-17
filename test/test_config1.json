@@ -9,14 +9,14 @@
             "options" : {
                 "httpClose" :  true
             },
-            "acls" : [
+            "filters" : [
                 {
                     "name" : "uses_internetexplorer",
-                    "pattern" : "hdr_sub(user-agent) MSIE",
-                    "backend" : "test_be_1_b"
+                    "condition" : "hdr_sub(user-agent) MSIE",
+                    "destination" : "test_be_1_b"
                 }
             ],
-            "httpSpikeLimit" : {
+            "httpQuota" : {
                 "sampleTime" : "5",
                 "expiryTime" : "10s",
                 "rate" : 100
@@ -133,5 +133,53 @@
                 "transparent" :  false
             }
         }
-    ]
+    ],
+    "routes": [
+    {
+      "name": "test_route_1",
+      "port": 9025,
+      "protocol": "http",
+      "filters": [
+        {
+          "name": "uses_internet_explorer",
+          "condition": "hdr_sub(user-agent) MSIE",
+          "destination": "group_b"
+        }
+      ],
+      "httpQuota": {
+        "sampleWindow": "1s",
+        "rate": 10000,
+        "expiryTime": "10s"
+      },
+      "tcpQuota": {
+        "sampleWindow": "3s",
+        "rate": 10000,
+        "expiryTime": "10s"
+      },
+      "groups": [
+        {
+          "name": "group_a",
+          "weight": 45,
+          "servers": [
+            {
+              "name": "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd",
+              "host": "192.168.2.1",
+              "port": 8081
+            }
+          ]
+        },
+        {
+          "name": "group_b",
+          "weight": 55,
+          "servers": [
+            {
+              "name": "paas.fb76ea52-098f-4e2a-abbe-0238c3d48480",
+              "host": "192.168.2.1",
+              "port": 8082
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

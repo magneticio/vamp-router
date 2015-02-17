@@ -4,33 +4,79 @@ import (
 	"sync"
 )
 
-// placeholder
-type Runtime struct {
-	Binary string
-}
+/*
+  A Route is structured set of Haproxy frontends, backends and servers. The Route provides a convenient
+  and higher level way of creating and managing this structure. You could create this structure by
+  hand with separate API calls, but this is faster and easier in 9 out of 10 cases.
 
+  The structure of a route is as follows:
+
+                              -> [srv a] -> sock -> [fe a: be a] -> [*srv] -> host:port
+                            /
+    ->[fe (fltr)(qts) : be]-
+                            \
+                              -> [srv b] -> sock -> [fe b: be b] -> [*srv] -> host:port
+
+    fe = frontend
+    be = backend
+    srv = server
+    fltr = filter
+    qts = quotas
+
+  The above example has two groups, a and b, but a route can have many groups. The start of the
+  route (the first frontend) has filters and quotas that influence the way traffic flows in a route,
+  i.e. to which groups the traffic goes.
+
+  All items in a route map to actual Haproxy types from the vamp-loadbalancer/haproxy package.
+*/
 type Route struct {
-	Name           string    `json:"name" binding: "required"`
-	StableFrontend *Frontend `json:"stableFrontend" binding: "required"`
-	StableBackend  *Backend  `json:"stableBackend" binding: "required"`
+	Name      string    `json:"name" binding: "required"`
+	Port      int       `json:"port" binding: "required"`
+	Protocol  string    `json:"protocol" binding: "required"`
+	HttpQuota Quota     `json:"httpQuota"`
+	TcpQuota  Quota     `json:"tcpQuota"`
+	Filters   []*Filter `json:"filters"`
+	Groups    []*Group  `json:"groups"`
 }
 
-type NewRoute struct {
-	Name     string             `json:"name" binding: "required"`
-	Mode     string             `json:"mode" binding: "required"`
-	Endpoint int                `json:"endpoint" binding: "required"`
-	Servers  []*NewSimpleServer `json:"servers"`
+type Filter struct {
+	Name        string `json:"name" binding: "required"`
+	Condition   string `json:"condition" binding: "required"`
+	Destination string `json:"destination" binding: "required"`
 }
 
-type NewSimpleServer struct {
+type Quota struct {
+	SampleWindow string `json:"sampleWindow,omitempty" binding: "required"`
+	Rate         int    `json:"rate,omitempty" binding: "required"`
+	ExpiryTime   string `json:"expiryTime,omitempty" binding: "required"`
+}
+
+type Group struct {
+	Name    string    `json:"name" binding: "required"`
+	Weight  int       `json:"weight" binding: "required"`
+	Servers []*Server `json:"servers"`
+}
+
+type Server struct {
+	Name string `json:"name" binding: "required"`
 	Host string `json:"host" binding: "required"`
 	Port int    `json:"port" binding: "required"`
 }
 
-type Path struct {
-	Name     string `json:"name" binding: "required"`
-	Frontend string `json:"frontend" binding: "required"`
-	Backend  string `json:"backend" binding: "required"`
+type ServerDetail struct {
+	Name string `json:"name" binding: "required"`
+	Host string `json:"host" binding: "required"`
+	Port int    `json:"port" binding: "required"`
+	UnixSock      string `json:"unixSock"`
+	Weight        int    `json:"weight" binding:"required"`
+	MaxConn       int    `json:"maxconn"`
+	Check         bool   `json:"check"`
+	CheckInterval int    `json:"checkInterval"`
+}
+
+
+type Runtime struct {
+	Binary string
 }
 
 // Main configuration object for load balancers. This contains all variables and is passed to
@@ -50,7 +96,7 @@ type Config struct {
 type Backend struct {
 	Name           string           `json:"name" binding:"required"`
 	Mode           string           `json:"mode" binding:"required"`
-	BackendServers []*BackendServer `json:"servers" binding:"required"`
+	Servers 			 []*ServerDetail 				`json:"servers" binding:"required"`
 	Options        ProxyOptions     `json:"options"`
 	ProxyMode      bool             `json:"proxyMode" binding:"required"`
 }
@@ -65,9 +111,9 @@ type Frontend struct {
 	SockProtocol   string       `json:"sockProtocol"`
 	Options        ProxyOptions `json:"options"`
 	DefaultBackend string       `json:"defaultBackend" binding:"required"`
-	ACLs           []*ACL       `json:"acls"`
-	HttpSpikeLimit SpikeLimit   `json:"httpSpikeLimit,omitempty"`
-	TcpSpikeLimit  SpikeLimit   `json:"tcpSpikeLimit,omitempty"`
+	Filters           []*Filter `json:"filters,omitempty"`
+	HttpQuota Quota   					`json:"httpQuota,omitempty"`
+	TcpQuota  Quota   					`json:"tcpQuota,omitempty"`
 }
 
 type ProxyOptions struct {
@@ -82,33 +128,6 @@ type ProxyOptions struct {
 	TcpLog          bool `json:"tcpLog"`
 	TcpSmartAccept  bool `json:"tcpSmartAccept"`
 	TcpSmartConnect bool `json:"tcpSmartConnect"`
-}
-
-// Defines a server which exists in a backend.
-type BackendServer struct {
-	Name          string `json:"name" binding:"required"`
-	Host          string `json:"host"`
-	Port          int    `json:"port"`
-	UnixSock      string `json:"unixSock"`
-	Weight        int    `json:"weight" binding:"required"`
-	MaxConn       int    `json:"maxconn"`
-	Check         bool   `json:"check"`
-	CheckInterval int    `json:"checkInterval"`
-}
-
-// Defines an ACL
-type ACL struct {
-	Name    string `json:"name" binding:"required"`
-	Backend string `json:"backend" binding:"required"`
-	Pattern string `json:"pattern" binding:"required"`
-}
-
-// Defines a rate limiting setup
-
-type SpikeLimit struct {
-	SampleTime string `json:"sampleTime,omitempty" binding:"required"`
-	ExpiryTime string `json:"expiryTime,omitempty" binding:"required"`
-	Rate       int    `json:"rate,omitempty" binding:"required"`
 }
 
 // Struct to hold the output from the /stats endpoint

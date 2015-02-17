@@ -82,39 +82,39 @@ frontend {{.Name}}
     # On these metrics we set rules to designate upper limits. When limits are hit
     # we reroute the traffic to a specific abusers backend
 
-    {{if .HttpSpikeLimit.Rate }} # start HTTP spike limit generation
+    {{if .HttpQuota.Rate }} # start HTTP spike limit generation
 
-        stick-table type ip size 200k expire {{ .HttpSpikeLimit.ExpiryTime}} store http_req_rate({{ .HttpSpikeLimit.SampleTime}})
+        stick-table type ip size 200k expire {{ .HttpQuota.ExpiryTime}} store http_req_rate({{ .HttpQuota.SampleWindow}})
 
         # values below are specific to the backend
         # track the request and set ACL's
         tcp-request content  track-sc1 src
-        acl marked_as_abuser  sc1_http_req_rate gt {{ .HttpSpikeLimit.Rate}}
+        acl marked_as_abuser  sc1_http_req_rate gt {{ .HttpQuota.Rate}}
 
         use_backend abusers if marked_as_abuser
 
     {{end}} # end HTTP spike limit generation
 
-    {{if .TcpSpikeLimit.Rate }} # start TCP spike limit generation
+    {{if .TcpQuota.Rate }} # start TCP spike limit generation
 
-        stick-table type ip size 200k expire {{ .TcpSpikeLimit.ExpiryTime}} store conn_rate({{ .TcpSpikeLimit.SampleTime}})
+        stick-table type ip size 200k expire {{ .TcpQuota.ExpiryTime}} store conn_rate({{ .TcpQuota.SampleWindow}})
 
         # values below are specific to the backend
         # track the request and set ACL's
         tcp-request content  track-sc2 src
-        acl marked_as_abuser  sc2_conn_rate gt {{ .TcpSpikeLimit.Rate}}
+        acl marked_as_abuser  sc2_conn_rate gt {{ .TcpQuota.Rate}}
 
         use_backend abusers if marked_as_abuser
 
     {{end}} # end spike limit generation
 
     ###
-    # ACL Management
+    # Filter Management
     #
 
-    {{range .ACLs}}
-    acl {{.Name}} {{.Pattern}}
-    use_backend {{.Backend}} if {{.Name}}
+    {{range .Filters}}
+    acl {{.Name}} {{.Condition}}
+    use_backend {{.Destination}} if {{.Name}}
     {{end}}
 
     default_backend {{.DefaultBackend}}
@@ -135,7 +135,7 @@ backend {{.Name}}
 
 {{ if .ProxyMode}}
 
-    {{range .BackendServers}}
+    {{range .Servers}}
         server {{.Name}} unix@{{.UnixSock}} send-proxy weight {{.Weight}}
     {{end}}
 
@@ -150,7 +150,7 @@ backend {{.Name}}
    {{end}}
 
    {{ if eq .Mode "http" }} cookie vamp_srv insert httponly maxidle 5m maxlife 1h {{end}}
-    {{$mode := .Mode}}{{range .BackendServers}}
+    {{$mode := .Mode}}{{range .Servers}}
         server {{.Name}} {{.Host}}:{{.Port}} {{if eq $mode "http" }} cookie {{.Name}} {{end}} weight {{.Weight}} maxconn {{.MaxConn}} {{if .Check}}check inter {{.CheckInterval}}{{end}} {{end}}
     {{if .Options.AbortOnClose}} option abortonclose{{end}}
     {{if .Options.AllBackups}} option allbackups{{end}}

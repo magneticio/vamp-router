@@ -1,112 +1,20 @@
 package haproxy
 
 import (
-	"strconv"
+	"errors"
 )
 
-/*
+// gets all routes
+func (c *Config) GetRoutes() []*Route {
 
-  AddRoutes is a convenience method to create a set of frontends, backends etc.that together form what we
-  call a "route". You could create this structure by hand with separate API calls, but this is faster and
-  easier in 9 out of 10 cases.
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
 
-  The structure of a route is as follows. Each
-
-                            -> [server a] -> socket -> [frontend a: backend a] -> [*servers] -> host:port
-                          /
-  ->[frontend : backend]-
-                          \
-                            -> [server b] -> socket -> [frontend b: backend b] -> [*servers] -> host:port
-
-  *Note: the servers at the end of the route are not created in this routine.
-
-*/
-
-func (c *Config) AddRoute(newRoute *NewRoute) error {
-
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-
-	// we create the routes structure by starting "at the back": the a/b servers that use socket
-	// to direct traffic to frontends listening on those sockets
-	stableServerA := defaultSocketProxyServer(newRoute.Name+"_stable_srv_a", 100)
-	stableServerB := defaultSocketProxyServer(newRoute.Name+"_stable_srv_b", 0)
-
-	backendA := defaultBackend(newRoute.Name, "a", newRoute.Mode, false, []*BackendServer{})
-	backendB := defaultBackend(newRoute.Name, "b", newRoute.Mode, false, []*BackendServer{})
-
-	// if any initial servers are provided, we add them to backendA
-	if len(newRoute.Servers) > 0 {
-
-		for i, srv := range newRoute.Servers {
-			name := newRoute.Name + "_grp_a" + "_srv_" + strconv.Itoa(i+1)
-			newSrv := defaultServer(name, 100, srv.Host, srv.Port)
-			backendA.BackendServers = append(backendA.BackendServers, newSrv)
-		}
-	}
-
-	frontendA := defaultSocketProxyFrontend(newRoute.Name, "a", newRoute.Mode, stableServerA.UnixSock, backendA)
-	frontendB := defaultSocketProxyFrontend(newRoute.Name, "b", newRoute.Mode, stableServerB.UnixSock, backendB)
-
-	stableBackend := defaultBackend(newRoute.Name, "", newRoute.Mode, true, []*BackendServer{stableServerA, stableServerB})
-	stableFrontend := defaultFrontend(newRoute.Name, newRoute.Mode, newRoute.Endpoint, stableBackend)
-
-	// add everything to the config for haproxy
-	route := Route{
-		Name:           newRoute.Name,
-		StableFrontend: stableFrontend,
-		StableBackend:  stableBackend,
-	}
-
-	c.Routes = append(c.Routes, &route)
-
-	feCollection := []*Frontend{stableFrontend, frontendA, frontendB}
-	beCollection := []*Backend{stableBackend, backendA, backendB}
-
-	for _, fe := range feCollection {
-		c.Frontends = append(c.Frontends, fe)
-	}
-
-	for _, be := range beCollection {
-		c.Backends = append(c.Backends, be)
-	}
-	return nil
-}
-
-// deletes a route, cascading down the structure and remove all underpinning
-// frontends, backends and servers.
-func (c *Config) DeleteRoute(name string) bool {
-
-	result := false
-
-	// first find the route
-	for i, rt := range c.Routes {
-		if rt.Name == name {
-
-			// get the servers so we can delete the frontends/backends the Unix sockets are pointing to
-			servers := rt.StableBackend.BackendServers
-
-			for _, srv := range servers {
-				for _, fe := range c.Frontends {
-					if fe.UnixSock == srv.UnixSock {
-						c.DeleteFrontend(fe.Name)
-						c.DeleteBackend(fe.DefaultBackend)
-					}
-				}
-			}
-
-			c.DeleteFrontend(rt.StableFrontend.Name)
-			c.DeleteBackend(rt.StableBackend.Name)
-			c.Routes = append(c.Routes[:i], c.Routes[i+1:]...)
-			result = true
-			break
-		}
-	}
-	return result
+	return c.Routes
 }
 
 // gets a route
-func (c *Config) GetRoute(name string) *Route {
+func (c *Config) GetRoute(name string) (*Route, error) {
 
 	c.Mutex.RLock()
 	defer c.Mutex.RUnlock()
@@ -115,84 +23,122 @@ func (c *Config) GetRoute(name string) *Route {
 
 	for _, rt := range c.Routes {
 		if rt.Name == name {
-			result = rt
+			return rt, nil
 			break
-
 		}
 	}
-	return result
+	return result, errors.New("no route found")
 }
 
-func defaultSocketProxyServer(name string, weight int) *BackendServer {
-	return &BackendServer{
-		Name:          name,
-		Host:          "",
-		Port:          0,
-		UnixSock:      "/tmp/" + name + ".sock",
-		Weight:        weight,
-		MaxConn:       1000,
-		Check:         false,
-		CheckInterval: 10,
+// add a route to the configuration
+func (c *Config) AddRoute(route *Route) error {
+
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	// create some slices for all the stuff we are going to create. These are just holders so we can
+	// iterate over them once we have created all the basic structures and add them to the configuration.
+	feSlice := []*Frontend{}
+	beSlice := []*Backend{}
+
+
+	// When creating a new route, we have to create the stable frontends and backends.
+	// 1. Check if the route exists
+	// 1. Create stable Backend with empty server slice
+	// 2. Create stable Frontend and add the stable Backend to it
+
+	stableBackend := c.backendFactory(route.Name, route.Protocol, true, []*ServerDetail{})
+	beSlice = append(beSlice,stableBackend)
+
+	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, stableBackend)
+	feSlice = append(feSlice,stableFrontend)
+/*
+
+	for groups
+
+		1. Create socketServer
+		2. Add it to the stable Backend
+		3. Create Backend (with empty server slice)
+		4. Create Frontend (set socket to the socketServer, add Backend)
+*/
+
+		for _, group := range route.Groups {
+				socketServer := c.socketServerFactory(route.Name + "." + group.Name, group.Weight)
+				stableBackend.Servers = append(stableBackend.Servers,socketServer)
+
+				backend := c.backendFactory(route.Name + "." + group.Name, route.Protocol, false, []*ServerDetail{})
+				beSlice = append(beSlice,backend)
+
+				frontend := c.socketFrontendFactory(route.Name + "." + group.Name, route.Protocol, socketServer.UnixSock, backend)
+				feSlice = append(feSlice, frontend)
+
+/*
+		for servers
+			1. Create Server
+			2. Add Server to Backend Servers slice
+*/
+			for _, server := range group.Servers {
+				srv := c.serverFactory(server.Name, group.Weight, server.Host, server.Port)
+				backend.Servers = append(backend.Servers, srv)
+			}
+		}
+
+
+	for _, fe := range feSlice {
+		c.Frontends = append(c.Frontends, fe)
 	}
+
+	for _, be := range beSlice {
+		c.Backends = append(c.Backends, be)
+	}
+
+	c.Routes = append(c.Routes, route)
+	return nil
 }
 
-func defaultServer(name string, weight int, host string, port int) *BackendServer {
-	return &BackendServer{
-		Name:          name,
-		Host:          host,
-		Port:          port,
-		UnixSock:      "",
-		Weight:        weight,
-		MaxConn:       1000,
-		Check:         false,
-		CheckInterval: 10,
-	}
-}
+// deletes a route, cascading down the structure and remove all underpinning
+// frontends, backends and servers.
+func (c *Config) DeleteRoute(name string) error {
 
-func defaultBackend(name string, group string, mode string, proxy bool, servers []*BackendServer) *Backend {
-	var postfix string
-	if group == "" {
-		postfix = "_be"
-	} else {
-		postfix = "_be_" + group
-	}
-	return &Backend{
-		Name:           name + postfix,
-		Mode:           mode,
-		BackendServers: servers,
-		Options:        ProxyOptions{},
-		ProxyMode:      proxy,
-	}
-}
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 
-func defaultFrontend(name string, mode string, port int, backend *Backend) *Frontend {
+  for i, route := range c.Routes {
 
-	return &Frontend{
-		Name:           name + "_fe",
-		Mode:           mode,
-		BindPort:       port,
-		BindIp:         "0.0.0.0",
-		Options:        ProxyOptions{},
-		DefaultBackend: backend.Name,
-		ACLs:           []*ACL{},
-		HttpSpikeLimit: SpikeLimit{},
-		TcpSpikeLimit:  SpikeLimit{},
-	}
+    if route.Name == name {
 
-}
+    	// first remove all the frontends and backends related to the groups
+    		for _, group := range route.Groups {
 
-func defaultSocketProxyFrontend(name string, group string, mode string, socket string, backend *Backend) *Frontend {
+    		for j, backend := range c.Backends {
+    			if backend.Name == route.Name + "." + group.Name {
+    				c.Backends = append(c.Backends[:j], c.Backends[j+1:]...)
+    			} 
+    		}
+    		for k, frontend := range c.Frontends {
+    			if frontend.Name == route.Name + "." + group.Name {
+    				c.Frontends = append(c.Frontends[:k], c.Frontends[k+1:]...)
+    			} 
+    		}				
+    	}
 
-	return &Frontend{
-		Name:           name + "_fe_" + group,
-		Mode:           mode,
-		UnixSock:       socket,
-		SockProtocol:   "accept-proxy",
-		Options:        ProxyOptions{},
-		DefaultBackend: backend.Name,
-		ACLs:           []*ACL{},
-		HttpSpikeLimit: SpikeLimit{},
-		TcpSpikeLimit:  SpikeLimit{},
-	}
+    	// then remove the single backend and frontend
+    		for l, backend := range c.Backends {
+    			if backend.Name == route.Name {
+    				c.Backends = append(c.Backends[:l], c.Backends[l+1:]...)
+    			} 
+    		}
 
+    		for m, frontend := range c.Frontends {
+    			if frontend.Name == route.Name {
+    				c.Frontends = append(c.Frontends[:m], c.Frontends[m+1:]...)
+    			} 
+    		}
+
+    	c.Routes = append(c.Routes[:i], c.Routes[i+1:]...)
+    	return nil
+    	break
+    }
+  }
+  return errors.New("no such route found")
 }

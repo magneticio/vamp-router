@@ -23,23 +23,44 @@ func GetRoute(c *gin.Context) {
 	route := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	result := config.GetRoute(route)
-	if result != nil {
-		c.JSON(200, result)
+	result, err := config.GetRoute(route)
+	if err != nil {
+		c.String(404, err.Error())
 	} else {
-		c.String(404, "no such route")
+		c.JSON(200, result)
 	}
+}
 
+func PutRoute(c *gin.Context) {
+
+	var route haproxy.Route
+	config := c.MustGet("haConfig").(*haproxy.Config)
+	name := c.Params.ByName("name")
+
+	if c.Bind(&route) {
+		if err := config.DeleteRoute(name); err != nil {
+			c.String(404, err.Error())
+		} else {
+			config.AddRoute(&route)
+			HandleReload(c, config, 200, "updated route")
+		}
+	} else {
+		c.String(500, "Invalid JSON")
+	}
 }
 
 func PostRoute(c *gin.Context) {
 
-	var newRoute haproxy.NewRoute
+	var route haproxy.Route
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	if c.Bind(&newRoute) {
-		config.AddRoute(&newRoute)
-		HandleReload(c, config, 201, "created route")
+	if c.Bind(&route) {
+		if !config.RouteExists(route.Name) {
+			config.AddRoute(&route)
+			HandleReload(c, config, 201, "created route")
+		} else {
+			c.String(409,"route already exists")
+		}
 	} else {
 		c.String(500, "Invalid JSON")
 	}
@@ -47,12 +68,12 @@ func PostRoute(c *gin.Context) {
 
 func DeleteRoute(c *gin.Context) {
 
-	routeName := c.Params.ByName("name")
+	name := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	if config.DeleteRoute(routeName) {
-		HandleReload(c, config, 200, "deleted route")
+	if err := config.DeleteRoute(name); err != nil {
+		c.String(404, err.Error())
 	} else {
-		c.String(404, "no such route")
+		HandleReload(c, config, 200, "deleted route")
 	}
 }

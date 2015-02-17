@@ -8,9 +8,9 @@
           <th>mode</th>
           <th>default backend</th>
           <th>servers</th>
-          <th>acls</th>
-          <th>http limits</th>
-          <th>tcp limits</th>
+          <th>filters</th>
+          <th>http quota</th>
+          <th>tcp quota</th>
           <th></th>
       </tr>
       </thead>
@@ -25,9 +25,9 @@
           <td><small>{{frontend.mode}}</small></td>
           <td><small>{{frontend.defaultBackend.name}}</small></td>
           <td><small>{{frontend.defaultBackend.servers.length}}</small></td>
-          <td><small>{{frontend.acls.length || 0}}</small></td>
-          <td><small>{{frontend.httpSpikeLimits.length > 0}}</small></td>
-          <td><small>{{frontend.tcpSpikeLimits.length > 0}}</small></td>
+          <td><small>{{frontend.filters.length || 0}}</small></td>
+          <td><small>{{frontend.httpQuota}}</small></td>
+          <td><small>{{frontend.tcpQuota}}</small></td>
           <td><small ng-class="{
                                   'fui-triangle-down' : showDetails == false,
                                   'fui-triangle-up'   : showDetails == true

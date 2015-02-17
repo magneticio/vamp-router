@@ -32,7 +32,7 @@ func (c *Config) SetWeight(backend string, server string, weight int) error {
 
 	for _, be := range c.Backends {
 		if be.Name == backend {
-			for _, srv := range be.BackendServers {
+			for _, srv := range be.Servers {
 				if srv.Name == server {
 					srv.Weight = weight
 				}
@@ -99,39 +99,39 @@ func (c *Config) DeleteFrontend(name string) bool {
 	return result
 }
 
-// get the acls from a frontend
-func (c *Config) GetAcls(frontend string) []*ACL {
+// get the filters from a frontend
+func (c *Config) GetFilters(frontend string) []*Filter {
 
 	c.Mutex.RLock()
 	defer c.Mutex.RUnlock()
 
-	var acls []*ACL
+	var filters []*Filter
 
 	for _, fe := range c.Frontends {
 		if fe.Name == frontend {
-			acls = fe.ACLs
+			filters = fe.Filters
 
 		}
 	}
-	return acls
+	return filters
 }
 
-// get the acls from a frontend
-func (c *Config) AddAcl(frontend string, acl *ACL) error {
+// set the filter on a frontend
+func (c *Config) AddFilter(frontend string, filter *Filter) error {
 
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
 
 	for _, fe := range c.Frontends {
 		if fe.Name == frontend {
-			fe.ACLs = append(fe.ACLs, acl)
+			fe.Filters = append(fe.Filters, filter)
 		}
 	}
 	return nil
 }
 
-// delete an ACL from a frontend
-func (c *Config) DeleteAcl(frontendName string, aclName string) bool {
+// delete a Filter from a frontend
+func (c *Config) DeleteFilter(frontendName string, filterName string) bool {
 
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
@@ -139,9 +139,9 @@ func (c *Config) DeleteAcl(frontendName string, aclName string) bool {
 
 	for _, fe := range c.Frontends {
 		if fe.Name == frontendName {
-			for i, acl := range fe.ACLs {
-				if acl.Name == aclName {
-					fe.ACLs = append(fe.ACLs[:i], fe.ACLs[i+1:]...)
+			for i, filter := range fe.Filters {
+				if filter.Name == filterName {
+					fe.Filters = append(fe.Filters[:i], fe.Filters[i+1:]...)
 					result = true
 					break
 				}
@@ -195,16 +195,16 @@ func (c *Config) DeleteBackend(name string) bool {
 	return result
 }
 
-func (c *Config) GetServer(backendName string, serverName string) *BackendServer {
+func (c *Config) GetServer(backendName string, serverName string) *ServerDetail {
 
 	c.Mutex.RLock()
 	defer c.Mutex.RUnlock()
 
-	var result *BackendServer
+	var result *ServerDetail
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
-			for _, srv := range be.BackendServers {
+			for _, srv := range be.Servers {
 				if srv.Name == serverName {
 					result = srv
 					break
@@ -216,7 +216,7 @@ func (c *Config) GetServer(backendName string, serverName string) *BackendServer
 }
 
 // adds a Server
-func (c *Config) AddServer(backendName string, server *BackendServer) bool {
+func (c *Config) AddServer(backendName string, server *ServerDetail) bool {
 
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
@@ -225,7 +225,7 @@ func (c *Config) AddServer(backendName string, server *BackendServer) bool {
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
-			be.BackendServers = append(be.BackendServers, server)
+			be.Servers = append(be.Servers, server)
 			result = true
 			break
 		}
@@ -241,9 +241,9 @@ func (c *Config) DeleteServer(backendName string, serverName string) bool {
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
-			for i, srv := range be.BackendServers {
+			for i, srv := range be.Servers {
 				if srv.Name == serverName {
-					be.BackendServers = append(be.BackendServers[:i], be.BackendServers[i+1:]...)
+					be.Servers = append(be.Servers[:i], be.Servers[i+1:]...)
 					result = true
 					break
 				}
@@ -254,29 +254,20 @@ func (c *Config) DeleteServer(backendName string, serverName string) bool {
 }
 
 // gets all servers of a specific backend
-func (c *Config) GetServers(backendName string) []*BackendServer {
+func (c *Config) GetServers(backendName string) []*ServerDetail {
 
 	c.Mutex.RLock()
 	defer c.Mutex.RUnlock()
 
-	var result []*BackendServer
+	var result []*ServerDetail
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
-			result = be.BackendServers
+			result = be.Servers
 			break
 		}
 	}
 	return result
-}
-
-// gets all routes
-func (c *Config) GetRoutes() []*Route {
-
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
-
-	return c.Routes
 }
 
 // Render a config object to a HAproxy config file
@@ -334,4 +325,16 @@ func (c *Config) RenderAndPersist() error {
 	}
 
 	return nil
+}
+
+func (c *Config) RouteExists(name string) bool {
+	c.Mutex.RLock()
+	defer c.Mutex.RUnlock()
+	
+	for _,route := range c.Routes {
+		if route.Name == name {
+			return true
+		}
+	}
+	return false
 }

@@ -78,23 +78,23 @@ func TestConfiguration_DeleteFrontend(t *testing.T) {
 
 }
 
-func TestConfiguration_GetAcls(t *testing.T) {
+func TestConfiguration_GetFilters(t *testing.T) {
 
-	acls := haConfig.GetAcls("test_fe_1")
-	if acls[0].Name != "uses_internetexplorer" {
-		t.Errorf("Could not retrieve ACL")
+	filters := haConfig.GetFilters("test_fe_1")
+	if filters[0].Name != "uses_internetexplorer" {
+		t.Errorf("Could not retrieve Filter")
 	}
 }
 
-func TestConfiguration_AddAcl(t *testing.T) {
+func TestConfiguration_AddFilter(t *testing.T) {
 
-	acl := ACL{Name: "uses_firefox", Backend: "test_be_1_b", Pattern: "hdr_sub(user-agent) Mozilla"}
-	err := haConfig.AddAcl("test_fe_1", &acl)
+	filter := Filter{Name: "uses_firefox",Condition: "hdr_sub(user-agent) Mozilla", Destination: "test_be_1_b"}
+	err := haConfig.AddFilter("test_fe_1", &filter)
 	if err != nil {
-		t.Errorf("Could not add ACL")
+		t.Errorf("Could not add Filter")
 	}
-	if haConfig.Frontends[0].ACLs[1].Name != "uses_firefox" {
-		t.Errorf("Could not add ACL")
+	if haConfig.Frontends[0].Filters[1].Name != "uses_firefox" {
+		t.Errorf("Could not add Filter")
 	}
 }
 

@@ -27,9 +27,9 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		   Frontend
 		*/
 		v1.GET("/frontends", GetFrontends)
-		v1.POST("frontends/:name/acls", PostFrontendACL)
-		v1.GET("/frontends/:name/acls", GetFrontendACLs)
-		v1.DELETE("/frontends/:name/acls/:acl_name", DeleteFrontendACL)
+		v1.POST("frontends/:name/Filters", PostFrontendFilter)
+		v1.GET("/frontends/:name/Filters", GetFrontendFilters)
+		v1.DELETE("/frontends/:name/Filters/:Filter_name", DeleteFrontendFilter)
 		v1.GET("/frontends/:name", GetFrontend)
 		v1.DELETE("/frontends/:name", DeleteFrontend)
 		v1.POST("/frontends", PostFrontend)
@@ -65,8 +65,15 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		*/
 		v1.GET("/routes", GetRoutes)
 		v1.GET("/routes/:name", GetRoute)
+		v1.PUT("/routes/:name", PutRoute)
 		v1.POST("/routes", PostRoute)
 		v1.DELETE("/routes/:name", DeleteRoute)
+
+		// v1.GET("/routes/groups", GetGroups)
+		// v1.GET("/routes/groups/:name", GetGroup)
+		// v1.PUT("/routes/groups/:name", PutGroup)
+		// v1.POST("/routes/groups", PostGroup)
+		// v1.DELETE("/routes/groups/:name", DeleteGroup)
 
 		/*
 		   Info

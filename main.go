@@ -7,7 +7,7 @@ import (
 	"github.com/magneticio/vamp-loadbalancer/helpers"
 	"github.com/magneticio/vamp-loadbalancer/logging"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
-	"github.com/magneticio/vamp-loadbalancer/parsers"
+	"github.com/magneticio/vamp-loadbalancer/tools"
 	"github.com/magneticio/vamp-loadbalancer/zookeeper"
 	gologger "github.com/op/go-logging"
 	"os"
@@ -53,18 +53,18 @@ func main() {
 	flag.Parse()
 
 	// resolve flags and environment variables
-	parsers.SetValueFromEnv(&port, "VAMP_LB_PORT")
-	parsers.SetValueFromEnv(&logPath, "VAMP_LB_LOG_PATH")
-	parsers.SetValueFromEnv(&configFilePath, "VAMP_LB_CONFIG_PATH")
-	parsers.SetValueFromEnv(&templateFilePath, "VAMP_LB_TEMPLATE_PATH")
-	parsers.SetValueFromEnv(&jsonFilePath, "VAMP_LB_JSON_PATH")
-	parsers.SetValueFromEnv(&binaryPath, "VAMP_LB_BINARY_PATH")
-	parsers.SetValueFromEnv(&kafkaSwitch, "VAMP_LB_KAFKA_SWITCH")
-	parsers.SetValueFromEnv(&kafkaHost, "VAMP_LB_KAFKA_HOST")
-	parsers.SetValueFromEnv(&kafkaPort, "VAMP_LB_KAFKA_PORT")
-	parsers.SetValueFromEnv(&zooConString, "VAMP_LB_ZOO_STRING")
-	parsers.SetValueFromEnv(&zooConKey, "VAMP_LB_ZOO_KEY")
-	parsers.SetValueFromEnv(&pidFilePath, "VAMP_LB_PID_PATH")
+	tools.SetValueFromEnv(&port, "VAMP_LB_PORT")
+	tools.SetValueFromEnv(&logPath, "VAMP_LB_LOG_PATH")
+	tools.SetValueFromEnv(&configFilePath, "VAMP_LB_CONFIG_PATH")
+	tools.SetValueFromEnv(&templateFilePath, "VAMP_LB_TEMPLATE_PATH")
+	tools.SetValueFromEnv(&jsonFilePath, "VAMP_LB_JSON_PATH")
+	tools.SetValueFromEnv(&binaryPath, "VAMP_LB_BINARY_PATH")
+	tools.SetValueFromEnv(&kafkaSwitch, "VAMP_LB_KAFKA_SWITCH")
+	tools.SetValueFromEnv(&kafkaHost, "VAMP_LB_KAFKA_HOST")
+	tools.SetValueFromEnv(&kafkaPort, "VAMP_LB_KAFKA_PORT")
+	tools.SetValueFromEnv(&zooConString, "VAMP_LB_ZOO_STRING")
+	tools.SetValueFromEnv(&zooConKey, "VAMP_LB_ZOO_KEY")
+	tools.SetValueFromEnv(&pidFilePath, "VAMP_LB_PID_PATH")
 
 	// setup logging
 	log = logging.ConfigureLog(logPath)

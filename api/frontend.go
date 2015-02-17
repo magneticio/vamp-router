@@ -57,39 +57,39 @@ func DeleteFrontend(c *gin.Context) {
 	}
 }
 
-func GetFrontendACLs(c *gin.Context) {
+func GetFrontendFilters(c *gin.Context) {
 
 	frontend := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	status := config.GetAcls(frontend)
+	status := config.GetFilters(frontend)
 	c.JSON(200, status)
 
 }
 
-func PostFrontendACL(c *gin.Context) {
+func PostFrontendFilter(c *gin.Context) {
 
-	var acl haproxy.ACL
+	var Filter haproxy.Filter
 	frontend := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	if c.Bind(&acl) {
-		config.AddAcl(frontend, &acl)
-		HandleReload(c, config, 201, "created acl")
+	if c.Bind(&Filter) {
+		config.AddFilter(frontend, &Filter)
+		HandleReload(c, config, 201, "created Filter")
 	} else {
 		c.String(500, "Invalid JSON")
 	}
 }
 
-func DeleteFrontendACL(c *gin.Context) {
+func DeleteFrontendFilter(c *gin.Context) {
 
 	frontendName := c.Params.ByName("name")
-	aclName := c.Params.ByName("acl_name")
+	FilterName := c.Params.ByName("Filter_name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	if config.DeleteAcl(frontendName, aclName) {
-		HandleReload(c, config, 200, "deleted acl")
+	if config.DeleteFilter(frontendName, FilterName) {
+		HandleReload(c, config, 200, "deleted Filter")
 	} else {
-		c.String(404, "no such acl")
+		c.String(404, "no such Filter")
 	}
 }

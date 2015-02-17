@@ -6,15 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/magneticio/vamp-loadbalancer/parsers"
+	"github.com/magneticio/vamp-loadbalancer/tools"
 	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
-	//"os/signal"
 	"strconv"
 	"strings"
-	//"syscall"
 )
 
 func (r *Runtime) SetPid(pidfile string) bool {
@@ -123,7 +121,7 @@ func (r *Runtime) GetInfo() (Info, error) {
 	if err != nil {
 		return Info, err
 	} else {
-		result, err := parsers.MultiLineToJson(result)
+		result, err := tools.MultiLineToJson(result)
 		if err != nil {
 			return Info, err
 		} else {
@@ -165,7 +163,7 @@ func (r *Runtime) GetStats(statsType string) ([]StatsGroup, error) {
 	if err != nil {
 		return Stats, err
 	} else {
-		result, err := parsers.CsvToJson(strings.Trim(result, "# "))
+		result, err := tools.CsvToJson(strings.Trim(result, "# "))
 		if err != nil {
 			return Stats, err
 		} else {

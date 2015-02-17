@@ -61,7 +61,7 @@ func GetServer(c *gin.Context) {
 
 func PostServer(c *gin.Context) {
 
-	var server haproxy.BackendServer
+	var server haproxy.ServerDetail
 	backend := c.Params.ByName("name")
 	config := c.MustGet("haConfig").(*haproxy.Config)
 
@@ -70,7 +70,7 @@ func PostServer(c *gin.Context) {
 		if result {
 			HandleReload(c, config, 201, "created server")
 		} else {
-			c.String(404, "no such backenbd")
+			c.String(404, "no such backend")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
