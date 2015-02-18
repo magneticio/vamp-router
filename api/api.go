@@ -27,18 +27,20 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		   Frontend
 		*/
 		v1.GET("/frontends", GetFrontends)
-		v1.POST("frontends/:name/Filters", PostFrontendFilter)
-		v1.GET("/frontends/:name/Filters", GetFrontendFilters)
-		v1.DELETE("/frontends/:name/Filters/:Filter_name", DeleteFrontendFilter)
+		v1.POST("/frontends", PostFrontend)
+		v1.POST("frontends/:name/filters", PostFrontendFilter)
+		v1.GET("/frontends/:name/filters", GetFrontendFilters)
+		v1.DELETE("/frontends/:name/filters/:filter_name", DeleteFrontendFilter)
 		v1.GET("/frontends/:name", GetFrontend)
 		v1.DELETE("/frontends/:name", DeleteFrontend)
-		v1.POST("/frontends", PostFrontend)
 
 		/*
 		   Backend
 		*/
 		v1.GET("/backends", GetBackends)
+		v1.POST("/backends", PostBackend)
 		v1.GET("/backends/:name", GetBackend)
+		v1.DELETE("/backends/:name", DeleteBackend)
 		v1.GET("/backends/:name/servers", GetServers)
 		v1.GET("/backends/:name/servers/:server", GetServer)
 		v1.PUT("/backends/:name/servers/:server", PutServerWeight)
@@ -64,17 +66,24 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 			Routes
 		*/
 		v1.GET("/routes", GetRoutes)
-		v1.GET("/routes/:name", GetRoute)
-		v1.PUT("/routes/:name", PutRoute)
 		v1.POST("/routes", PostRoute)
-		v1.DELETE("/routes/:name", DeleteRoute)
 
-		// v1.GET("/routes/groups", GetGroups)
-		// v1.GET("/routes/groups/:name", GetGroup)
-		// v1.PUT("/routes/groups/:name", PutGroup)
-		// v1.POST("/routes/groups", PostGroup)
-		// v1.DELETE("/routes/groups/:name", DeleteGroup)
+		v1.GET("/routes/:route", GetRoute)
+		v1.PUT("/routes/:route", PutRoute)
+		v1.DELETE("/routes/:route", DeleteRoute)
 
+		v1.GET("/routes/:route/groups", GetRouteGroups)
+		v1.POST("/routes/:route/groups", PostRouteGroup)
+		v1.GET("/routes/:route/groups/:group", GetRouteGroup)
+		v1.PUT("/routes/:route/groups/:group", PutRouteGroup)
+		v1.DELETE("/routes/:route/groups/:group", DeleteRouteGroup)
+
+
+		v1.GET("/routes/:route/groups/:group/servers", GetGroupServers)
+	  v1.GET("/routes/:route/groups/:group/servers/:server", GetGroupServer)
+	  v1.PUT("/routes/:route/groups/:group/servers/:server", PutGroupServer)
+	  v1.POST("/routes/:route/groups/:group/servers", PostGroupServer)
+	  v1.DELETE("/routes/:route/groups/:group/servers/:server", DeleteGroupServer)
 		/*
 		   Info
 		*/
@@ -84,6 +93,8 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 	return r
 }
 
+// Handles the reloading and persisting of the Haproxy config after a successful mutation of the 
+// config object.
 func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
 
 	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
@@ -101,4 +112,14 @@ func HandleReload(c *gin.Context, config *haproxy.Config, status int, message st
 	}
 
 	c.String(status, message)
+}
+
+// helper methods to grab the injected Config from the Http context
+func Config(c *gin.Context) *haproxy.Config {
+	return c.MustGet("haConfig").(*haproxy.Config)
+}
+
+// helper methods to grab the injected Runtime from the Http context
+func Runtime(c *gin.Context) *haproxy.Runtime {
+	return c.MustGet("haRuntime").(*haproxy.Runtime)
 }

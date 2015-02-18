@@ -41,6 +41,17 @@
               "port": 8082
             }
           ]
+        },
+        {
+          "name": "group_to_be_updated",
+          "weight": 32,
+          "servers": [
+            {
+              "name": "server_to_be_updated",
+              "host": "192.168.2.2",
+              "port": 8082
+            }
+          ]
         }
       ]
     }

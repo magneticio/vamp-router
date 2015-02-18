@@ -2,14 +2,12 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/magneticio/vamp-loadbalancer/haproxy"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
 )
 
 func GetAllStats(c *gin.Context) {
 
-	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-	status, err := runtime.GetStats("all")
+	status, err := Runtime(c).GetStats("all")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -20,8 +18,7 @@ func GetAllStats(c *gin.Context) {
 
 func GetBackendStats(c *gin.Context) {
 
-	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-	status, err := runtime.GetStats("backend")
+	status, err := Runtime(c).GetStats("backend")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -32,8 +29,7 @@ func GetBackendStats(c *gin.Context) {
 
 func GetFrontendStats(c *gin.Context) {
 
-	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-	status, err := runtime.GetStats("frontend")
+	status, err := Runtime(c).GetStats("frontend")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -43,8 +39,7 @@ func GetFrontendStats(c *gin.Context) {
 
 func GetServerStats(c *gin.Context) {
 
-	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
-	status, err := runtime.GetStats("server")
+	status, err := Runtime(c).GetStats("server")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {

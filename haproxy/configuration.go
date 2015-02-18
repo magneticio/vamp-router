@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"text/template"
+	"errors"
 )
 
 // Load a config from disk
@@ -43,20 +44,36 @@ func (c *Config) SetWeight(backend string, server string, weight int) error {
 	return nil
 }
 
+
+// the transactions methods are kept separate so we can chain an arbitrary set of operations
+// on the Config object within one transaction. Alas, this burdons the developer with extra housekeeping
+// but gives you more control over the flow of mutations and reads without risking deadlocks or duplicating
+// locks and unlocks inside of methods.
+func (c *Config) BeginWriteTrans() {
+	c.Mutex.Lock()
+}
+
+func (c *Config) EndWriteTrans() {
+	c.Mutex.Unlock()
+}
+
+func (c *Config) BeginReadTrans() {
+	c.Mutex.RLock()
+}
+
+func (c *Config) EndReadTrans() {
+	c.Mutex.RUnlock()
+}
+
+
 // gets all frontends
 func (c *Config) GetFrontends() []*Frontend {
-
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 
 	return c.Frontends
 }
 
 // gets a frontend
 func (c *Config) GetFrontend(name string) *Frontend {
-
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 
 	var result *Frontend
 
@@ -73,37 +90,25 @@ func (c *Config) GetFrontend(name string) *Frontend {
 // adds a frontend
 func (c *Config) AddFrontend(frontend *Frontend) error {
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-
 	c.Frontends = append(c.Frontends, frontend)
-
 	return nil
 
 }
 
 // deletes a frontend
-func (c *Config) DeleteFrontend(name string) bool {
-
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-	result := false
+func (c *Config) DeleteFrontend(name string) error {
 
 	for i, fe := range c.Frontends {
 		if fe.Name == name {
 			c.Frontends = append(c.Frontends[:i], c.Frontends[i+1:]...)
-			result = true
-			break
+			return nil
 		}
 	}
-	return result
+	return errors.New("no such frontend found")
 }
 
 // get the filters from a frontend
 func (c *Config) GetFilters(frontend string) []*Filter {
-
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 
 	var filters []*Filter
 
@@ -119,9 +124,6 @@ func (c *Config) GetFilters(frontend string) []*Filter {
 // set the filter on a frontend
 func (c *Config) AddFilter(frontend string, filter *Filter) error {
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-
 	for _, fe := range c.Frontends {
 		if fe.Name == frontend {
 			fe.Filters = append(fe.Filters, filter)
@@ -133,8 +135,6 @@ func (c *Config) AddFilter(frontend string, filter *Filter) error {
 // delete a Filter from a frontend
 func (c *Config) DeleteFilter(frontendName string, filterName string) bool {
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
 	result := false
 
 	for _, fe := range c.Frontends {
@@ -154,9 +154,6 @@ func (c *Config) DeleteFilter(frontendName string, filterName string) bool {
 // gets a backend
 func (c *Config) GetBackend(backend string) *Backend {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
-
 	var result *Backend
 
 	for _, be := range c.Backends {
@@ -172,33 +169,38 @@ func (c *Config) GetBackend(backend string) *Backend {
 // gets all backends
 func (c *Config) GetBackends() []*Backend {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
-
 	return c.Backends
 }
 
-// deletes a backend
-func (c *Config) DeleteBackend(name string) bool {
+// adds a frontend
+func (c *Config) AddBackend(backend *Backend) error {
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-	result := false
+	c.Backends = append(c.Backends, backend)
+	return nil
 
-	for i, be := range c.Backends {
-		if be.Name == name {
-			c.Backends = append(c.Backends[:i], c.Backends[i+1:]...)
-			result = true
-			break
-		}
-	}
-	return result
 }
 
-func (c *Config) GetServer(backendName string, serverName string) *ServerDetail {
+/* Deleting a backend is tricky. Frontends have a default backend. Removing that backend and then reloading
+the configuration will crash Haproxy. This means some extra protection is put into this method to check
+if this backend is still used. If not, it can be deleted.
+*/
+func (c *Config) DeleteBackend(name string) error {
 
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
+	if err := c.BackendUsed(name); err != nil {
+		return err 
+	} else {
+		for i, be := range c.Backends {
+			if be.Name == name {
+				c.Backends = append(c.Backends[:i], c.Backends[i+1:]...)
+				return nil
+			}
+		}
+		return errors.New("no such backend found")
+	} 
+}
+
+
+func (c *Config) GetServer(backendName string, serverName string) *ServerDetail {
 
 	var result *ServerDetail
 
@@ -216,48 +218,33 @@ func (c *Config) GetServer(backendName string, serverName string) *ServerDetail 
 }
 
 // adds a Server
-func (c *Config) AddServer(backendName string, server *ServerDetail) bool {
-
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-
-	result := false
+func (c *Config) AddServer(backendName string, server *ServerDetail) error {
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
 			be.Servers = append(be.Servers, server)
-			result = true
-			break
+			return nil
 		}
 	}
-	return result
+	return errors.New("No such backend found")
 }
 
-func (c *Config) DeleteServer(backendName string, serverName string) bool {
-
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-	result := false
-
+func (c *Config) DeleteServer(backendName string, serverName string) error {
 	for _, be := range c.Backends {
 		if be.Name == backendName {
 			for i, srv := range be.Servers {
 				if srv.Name == serverName {
 					be.Servers = append(be.Servers[:i], be.Servers[i+1:]...)
-					result = true
-					break
+					return nil
 				}
 			}
 		}
 	}
-	return result
+	return errors.New("no such server found")
 }
 
 // gets all servers of a specific backend
 func (c *Config) GetServers(backendName string) []*ServerDetail {
-
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 
 	var result []*ServerDetail
 
@@ -311,9 +298,6 @@ func (c *Config) Persist() error {
 
 func (c *Config) RenderAndPersist() error {
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
-
 	err := c.Render()
 	if err != nil {
 		return err
@@ -327,9 +311,51 @@ func (c *Config) RenderAndPersist() error {
 	return nil
 }
 
+// helper function to check if a Frontend exists
+func (c *Config) FrontendExists(name string) bool {
+	
+	for _,frontend := range c.Frontends {
+		if frontend.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// helper function to check if a Backend exists
+func (c *Config) BackendExists(name string) bool {
+	
+	for _,backend := range c.Backends {
+		if backend.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+
+// helper function to check if a Backend is used by a Frontend as a default backend or a filter destination
+func (c *Config) BackendUsed(name string) error {
+
+	if c.BackendExists(name) {
+		for _,frontend := range c.Frontends {
+			if frontend.DefaultBackend == name {
+				return errors.New("Backend still in use by: " + frontend.Name)
+			}
+			for _,filter := range frontend.Filters {
+				if filter.Destination == name {
+					return errors.New("Backend still in use by: " + frontend.Name + ".Filters." + filter.Name) 
+				}
+			}
+		}
+
+	}
+	return nil
+}
+
+
+// helper function to check if a Route exists
 func (c *Config) RouteExists(name string) bool {
-	c.Mutex.RLock()
-	defer c.Mutex.RUnlock()
 	
 	for _,route := range c.Routes {
 		if route.Name == name {
@@ -337,4 +363,58 @@ func (c *Config) RouteExists(name string) bool {
 		}
 	}
 	return false
+}
+
+// helper function to check if a Group exists
+func (c *Config) GroupExists(routeName string, groupName string) bool {
+	
+	for _, rt := range c.Routes {
+		if rt.Name == routeName {
+			for _, grp := range rt.Groups {
+				if grp.Name == groupName {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// helper function to check if a Server exists in a specific Group
+func (c *Config) ServerExists(routeName string, groupName string, serverName string) bool {
+	
+	for _, rt := range c.Routes {
+		if rt.Name == routeName {
+			for _, grp := range rt.Groups {
+				if grp.Name == groupName {
+					for _,server := range grp.Servers {
+						if server.Name == serverName{
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// helper function to create a Backend or Frontend name based on a Route and Group
+func GroupName(routeName string, groupName string) string {
+	return routeName + "." + groupName
+}
+func RouteName(routeName string, groupName string) string {
+	return routeName + "." + groupName
+}
+
+func BackendName(routeName string, groupName string) string {
+	return routeName + "." + groupName
+}
+
+func FrontendName(routeName string, groupName string) string {
+	return routeName + "." + groupName
+}
+
+func ServerName(routeName string, groupName string) string {
+	return routeName + "." + groupName
 }

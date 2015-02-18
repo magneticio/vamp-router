@@ -7,9 +7,10 @@ import (
 
 func GetFrontends(c *gin.Context) {
 
-	config := c.MustGet("haConfig").(*haproxy.Config)
+	Config(c).BeginReadTrans()
+	defer Config(c).EndReadTrans()
 
-	result := config.GetFrontends()
+	result := Config(c).GetFrontends()
 	if result != nil {
 		c.JSON(200, result)
 	} else {
@@ -20,10 +21,12 @@ func GetFrontends(c *gin.Context) {
 
 func GetFrontend(c *gin.Context) {
 
-	frontend := c.Params.ByName("name")
-	config := c.MustGet("haConfig").(*haproxy.Config)
+	Config(c).BeginReadTrans()
+	defer Config(c).EndReadTrans()
 
-	result := config.GetFrontend(frontend)
+	frontend := c.Params.ByName("name")
+
+	result := Config(c).GetFrontend(frontend)
 	if result != nil {
 		c.JSON(200, result)
 	} else {
@@ -34,12 +37,18 @@ func GetFrontend(c *gin.Context) {
 
 func PostFrontend(c *gin.Context) {
 
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()
+
 	var frontend haproxy.Frontend
-	config := c.MustGet("haConfig").(*haproxy.Config)
 
 	if c.Bind(&frontend) {
-		config.AddFrontend(&frontend)
-		HandleReload(c, config, 201, "created frontend")
+		if !Config(c).FrontendExists(frontend.Name) {
+		Config(c).AddFrontend(&frontend)
+		HandleReload(c, Config(c), 201, "created frontend")
+		} else {
+			c.String(409,"frontend already exists")
+		}
 	} else {
 		c.String(500, "Invalid JSON")
 	}
@@ -47,35 +56,41 @@ func PostFrontend(c *gin.Context) {
 
 func DeleteFrontend(c *gin.Context) {
 
-	frontendName := c.Params.ByName("name")
-	config := c.MustGet("haConfig").(*haproxy.Config)
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()	
 
-	if config.DeleteFrontend(frontendName) {
-		HandleReload(c, config, 200, "deleted frontend")
+	frontendName := c.Params.ByName("name")
+
+	if err := Config(c).DeleteFrontend(frontendName); err != nil {
+		c.String(404, err.Error())
 	} else {
-		c.String(404, "no such frontend")
+		HandleReload(c, Config(c), 200, "deleted frontend")
 	}
 }
 
 func GetFrontendFilters(c *gin.Context) {
 
-	frontend := c.Params.ByName("name")
-	config := c.MustGet("haConfig").(*haproxy.Config)
+	Config(c).BeginReadTrans()
+	defer Config(c).EndReadTrans()	
 
-	status := config.GetFilters(frontend)
+	frontend := c.Params.ByName("name")
+
+	status := Config(c).GetFilters(frontend)
 	c.JSON(200, status)
 
 }
 
 func PostFrontendFilter(c *gin.Context) {
 
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()		
+
 	var Filter haproxy.Filter
 	frontend := c.Params.ByName("name")
-	config := c.MustGet("haConfig").(*haproxy.Config)
 
 	if c.Bind(&Filter) {
-		config.AddFilter(frontend, &Filter)
-		HandleReload(c, config, 201, "created Filter")
+		Config(c).AddFilter(frontend, &Filter)
+		HandleReload(c, Config(c), 201, "created Filter")
 	} else {
 		c.String(500, "Invalid JSON")
 	}
@@ -83,12 +98,14 @@ func PostFrontendFilter(c *gin.Context) {
 
 func DeleteFrontendFilter(c *gin.Context) {
 
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()	
+
 	frontendName := c.Params.ByName("name")
 	FilterName := c.Params.ByName("Filter_name")
-	config := c.MustGet("haConfig").(*haproxy.Config)
 
-	if config.DeleteFilter(frontendName, FilterName) {
-		HandleReload(c, config, 200, "deleted Filter")
+	if Config(c).DeleteFilter(frontendName, FilterName) {
+		HandleReload(c, Config(c), 200, "deleted Filter")
 	} else {
 		c.String(404, "no such Filter")
 	}

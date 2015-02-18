@@ -132,6 +132,42 @@
                 "tcpSmartConnect" :  false,
                 "transparent" :  false
             }
+        },
+        {
+            "name" : "deletable_backend",
+            "mode" : "http",
+            "servers" : [
+                {
+                    "name" : "deletable_server",
+                    "host" : "192.168.2.1",
+                    "port" : 8081,
+                    "weight" : 100,
+                    "maxconn" : 1000,
+                    "check" : false,
+                    "checkInterval" : 10
+                }
+            ],
+            "proxyMode" : true,
+            "options" : {
+            }
+        },
+        {
+            "name" : "test_route_1.group_a",
+            "mode" : "http",
+            "servers" : [
+                {
+                    "name" : "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd",
+                    "host" : "192.168.2.1",
+                    "port" : 8081,
+                    "weight" : 100,
+                    "maxconn" : 1000,
+                    "check" : false,
+                    "checkInterval" : 10
+                }
+            ],
+            "proxyMode" : true,
+            "options" : {
+            }
         }
     ],
     "routes": [

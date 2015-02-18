@@ -17,6 +17,9 @@ var (
 	haConfig = Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
 )
 
+
+// Runtime
+
 func TestConfiguration_GetConfigFromDisk(t *testing.T) {
 	err := haConfig.GetConfigFromDisk(EXAMPLE)
 	if err != nil {
@@ -35,6 +38,9 @@ func TestConfiguration_SetWeight(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 }
+
+
+// Frontends
 
 func TestConfiguration_GetFrontends(t *testing.T) {
 	result := haConfig.GetFrontends()
@@ -66,16 +72,13 @@ func TestConfiguration_AddFrontend(t *testing.T) {
 
 func TestConfiguration_DeleteFrontend(t *testing.T) {
 
-	result := haConfig.DeleteFrontend("non_existing_backend")
-	if result != false {
-		t.Errorf("Backend should not be removed")
-	}
-
-	result = haConfig.DeleteFrontend("test_fe_2")
-	if result != true {
+	if err := haConfig.DeleteFrontend("test_fe_2"); err != nil {
 		t.Errorf("Failed to remove frontend")
 	}
 
+	if err := haConfig.DeleteFrontend("non_existing_backend"); err == nil {
+		t.Errorf("Backend should not be removed")
+	}
 }
 
 func TestConfiguration_GetFilters(t *testing.T) {
@@ -97,6 +100,28 @@ func TestConfiguration_AddFilter(t *testing.T) {
 		t.Errorf("Could not add Filter")
 	}
 }
+
+// Backends
+
+func TestConfiguration_DeleteBackend(t *testing.T) {
+
+
+	if err := haConfig.DeleteBackend("test_be_1"); err == nil {
+		t.Errorf("Backend should not be removed because it is still in use")
+	}
+
+	if err := haConfig.DeleteBackend("deletable_backend"); err != nil {
+		t.Errorf("Could not delete backend that should be deletable")
+	}
+
+	if err := haConfig.DeleteFrontend("non_existing_backend"); err == nil {
+		t.Errorf("Backend should not be removed")
+	}
+}
+
+
+
+// Rendering & Persisting
 
 func TestConfiguration_Render(t *testing.T) {
 	err := haConfig.Render()

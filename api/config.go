@@ -6,11 +6,17 @@ import (
 )
 
 func GetConfig(c *gin.Context) {
-	config := c.MustGet("haConfig").(*haproxy.Config)
-	c.JSON(200, config)
+
+	Config(c).BeginReadTrans()
+	defer Config(c).EndReadTrans()
+
+	c.JSON(200, Config(c))
 }
 
 func PostConfig(c *gin.Context) {
+
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()
 
 	config := c.MustGet("haConfig").(*haproxy.Config)
 

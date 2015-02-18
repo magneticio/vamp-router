@@ -1,0 +1,14 @@
+{
+    "name" : "deletable_backend",
+    "mode" : "http",
+    "servers" : [
+        {
+            "name" : "deletable",
+            "unixSock" : "/tmp/vamp_test_be_1_a.sock",
+            "weight" : 100
+        }
+    ],
+    "proxyMode" : true,
+    "options" : {
+    }
+}

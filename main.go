@@ -29,7 +29,7 @@ var (
 	zooConKey        string
 	pidFilePath      string
 	log              *gologger.Logger
-	version          = "0.2.0"
+	version          = "0.3.0"
 	stream           metrics.Streamer
 )
 
