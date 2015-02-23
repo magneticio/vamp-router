@@ -1,9 +1,7 @@
 package metrics
 
 type Metric struct {
-
-  Name string `json:"name"`
-  Value int `json:"value"`
-  Timestamp int64 `json:"timestamp"`
-
+	Name      string `json:"name"`
+	Value     int    `json:"value"`
+	Timestamp string `json:"timestamp"`
 }
