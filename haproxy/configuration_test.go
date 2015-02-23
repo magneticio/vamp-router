@@ -1,35 +1,42 @@
 package haproxy
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"testing"
 )
 
 const (
-	TEMPLATE_FILE = "../configuration/templates/haproxy_config.template"
-	CONFIG_FILE   = "/tmp/vamp_lb_test.cfg"
-	EXAMPLE       = "../test/test_config1.json"
-	JSON_FILE     = "/tmp/vamp_lb_test.json"
-	PID_FILE      = "/tmp/vamp_lb_test.pid"
+	TEMPLATE_FILE         = "../configuration/templates/haproxy_config.template"
+	CONFIG_FILE           = "/tmp/haproxy_test.cfg"
+	PREFILLED_CONFIG_FILE = "../test/haproxy_test.cfg"
+	CFG_JSON              = "../test/test_config1.json"
+	CFG_WRONG_JSON        = "../test/test_wrong_config1.json"
+	BACKEND_JSON          = "../test/test_backend1.json"
+	JSON_FILE             = "/tmp/vamp_lb_test.json"
+	PID_FILE              = "/tmp/vamp_lb_test.pid"
 )
 
 var (
 	haConfig = Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
 )
 
-
-// Runtime
-
 func TestConfiguration_GetConfigFromDisk(t *testing.T) {
-	err := haConfig.GetConfigFromDisk(EXAMPLE)
-	if err != nil {
-		t.Errorf("err: %v", err)
+
+	if haConfig.GetConfigFromDisk(CFG_JSON) != nil {
+		t.Errorf("Failed to load configuration from disk")
 	}
 
-	err = haConfig.GetConfigFromDisk("/this_is_really_something_wrong")
-	if err == nil {
-		t.Errorf("Expected an error")
+	// wait for https://github.com/magneticio/vamp/issues/119
+	// if haConfig.GetConfigFromDisk(CFG_WRONG_JSON) == nil {
+	// 	t.Errorf("Expected an error when loading malformend JSON")
+	// }
+
+	if haConfig.GetConfigFromDisk("/this_is_really_something_wrong") == nil {
+		t.Errorf("Expected an error when loading non existent path")
 	}
+
 }
 
 func TestConfiguration_SetWeight(t *testing.T) {
@@ -39,23 +46,30 @@ func TestConfiguration_SetWeight(t *testing.T) {
 	}
 }
 
-
 // Frontends
+
+func TestConfiguration_FrontendExists(t *testing.T) {
+
+	if haConfig.FrontendExists("non_existent_frontent") {
+		t.Errorf("Should return false on non existent frontend")
+	}
+
+	if !haConfig.FrontendExists("test_fe_1") {
+		t.Errorf("Should return true")
+	}
+}
 
 func TestConfiguration_GetFrontends(t *testing.T) {
 	result := haConfig.GetFrontends()
 	if result[0].Name != "test_fe_1" {
 		t.Errorf("Failed to get frontends array")
 	}
-
 }
 
 func TestConfiguration_GetFrontend(t *testing.T) {
-	result := haConfig.GetFrontend("test_fe_1")
-	if result.Name != "test_fe_1" {
+	if _, err := haConfig.GetFrontend("test_fe_1"); err != nil {
 		t.Errorf("Failed to get frontend")
 	}
-
 }
 
 func TestConfiguration_AddFrontend(t *testing.T) {
@@ -76,8 +90,8 @@ func TestConfiguration_DeleteFrontend(t *testing.T) {
 		t.Errorf("Failed to remove frontend")
 	}
 
-	if err := haConfig.DeleteFrontend("non_existing_backend"); err == nil {
-		t.Errorf("Backend should not be removed")
+	if err := haConfig.DeleteFrontend("non_existing_frontend"); err == nil {
+		t.Errorf("Frontend should not be removed")
 	}
 }
 
@@ -91,7 +105,7 @@ func TestConfiguration_GetFilters(t *testing.T) {
 
 func TestConfiguration_AddFilter(t *testing.T) {
 
-	filter := Filter{Name: "uses_firefox",Condition: "hdr_sub(user-agent) Mozilla", Destination: "test_be_1_b"}
+	filter := Filter{Name: "uses_firefox", Condition: "hdr_sub(user-agent) Mozilla", Destination: "test_be_1_b"}
 	err := haConfig.AddFilter("test_fe_1", &filter)
 	if err != nil {
 		t.Errorf("Could not add Filter")
@@ -101,10 +115,67 @@ func TestConfiguration_AddFilter(t *testing.T) {
 	}
 }
 
+func TestConfiguration_DeleteFilter(t *testing.T) {
+
+	if err := haConfig.DeleteFilter("test_fe_1", "uses_firefox"); err != nil {
+		t.Errorf("Could not add filter")
+	}
+
+	if err := haConfig.DeleteFilter("test_fe_1", "non_existent_filter"); err == nil {
+		t.Errorf("Should return error on non existent filter")
+	}
+}
+
 // Backends
 
-func TestConfiguration_DeleteBackend(t *testing.T) {
+func TestConfiguration_BackendUsed(t *testing.T) {
 
+	if err := haConfig.BackendUsed("non_existent_backend"); err != nil {
+		t.Errorf("Should not return error on non existent backend")
+	}
+
+	if err := haConfig.BackendUsed("test_be_1"); err == nil {
+		t.Errorf("Should return error on backend still used by frontend")
+	}
+
+	if err := haConfig.BackendUsed("test_be_1_b"); err == nil {
+		t.Errorf("Should return error on backend still used by filter")
+	}
+}
+
+func TestConfiguration_GetBackends(t *testing.T) {
+	result := haConfig.GetBackends()
+	if result[0].Name != "test_be_1" {
+		t.Errorf("Failed to get backends array")
+	}
+}
+
+func TestConfiguration_GetBackend(t *testing.T) {
+
+	if _, err := haConfig.GetBackend("test_be_1_a"); err != nil {
+		t.Errorf("Failed to get backend")
+	}
+
+	if _, err := haConfig.GetBackend("non_existent_backend"); err == nil {
+		t.Errorf("Should return error on non existent backend")
+	}
+}
+
+func TestConfiguration_AddBackend(t *testing.T) {
+	j, _ := ioutil.ReadFile(BACKEND_JSON)
+	var backend *Backend
+	_ = json.Unmarshal(j, &backend)
+
+	if haConfig.AddBackend(backend) != nil {
+		t.Errorf("Failed to add Backend")
+	}
+
+	if haConfig.AddBackend(backend) == nil {
+		t.Errorf("Adding should fail when a backend already exists")
+	}
+}
+
+func TestConfiguration_DeleteBackend(t *testing.T) {
 
 	if err := haConfig.DeleteBackend("test_be_1"); err == nil {
 		t.Errorf("Backend should not be removed because it is still in use")
@@ -114,12 +185,84 @@ func TestConfiguration_DeleteBackend(t *testing.T) {
 		t.Errorf("Could not delete backend that should be deletable")
 	}
 
-	if err := haConfig.DeleteFrontend("non_existing_backend"); err == nil {
+	if err := haConfig.DeleteBackend("non_existing_backend"); err == nil {
 		t.Errorf("Backend should not be removed")
 	}
 }
 
+func TestConfiguration_BackendExists(t *testing.T) {
 
+	if haConfig.BackendExists("non_existent_backend") {
+		t.Errorf("Should return false on non existent backend")
+	}
+
+	if !haConfig.BackendExists("test_be_1") {
+		t.Errorf("Should return true")
+	}
+}
+
+// Server
+
+func TestConfiguration_GetServers(t *testing.T) {
+
+	if _, err := haConfig.GetServers("test_be_1"); err != nil {
+		t.Errorf("Failed to get server array")
+	}
+
+	if _, err := haConfig.GetServers("non_existent_backend"); err == nil {
+		t.Errorf("Should return false on non existent backend")
+	}
+
+}
+
+func TestConfiguration_GetServer(t *testing.T) {
+
+	if _, err := haConfig.GetServer("test_be_1", "test_be_1_a"); err != nil {
+		t.Errorf("Failed to get server")
+	}
+
+	if _, err := haConfig.GetServer("non_existent_backend", "test_be_1"); err == nil {
+		t.Errorf("Should return error on non existent backend")
+	}
+}
+
+func TestConfiguration_AddServer(t *testing.T) {
+
+	server := &ServerDetail{Name: "add_server", Host: "192.168.0.1", Port: 12345, Weight: 10}
+
+	if err := haConfig.AddServer("test_be_1", server); err != nil {
+		t.Errorf("Failed to add server")
+	}
+
+	if err := haConfig.AddServer("non_existent_backend", server); err == nil {
+		t.Errorf("Should return false on non existent backend")
+	}
+}
+
+func TestConfiguration_DeleteServer(t *testing.T) {
+
+	if err := haConfig.DeleteServer("test_be_1", "deletable_server"); err != nil {
+		t.Errorf("Failed to delete server")
+	}
+
+	if err := haConfig.DeleteServer("test_be_1", "non_existent_server"); err == nil {
+		t.Errorf("Should return false on non existent server")
+	}
+}
+
+// Namers
+
+func TestConfiguration_GroupName(t *testing.T) {
+	if GroupName("a", "b") == "a.b." {
+		t.Errorf("Group name not well formed")
+	}
+}
+
+func TestConfiguration_RouteName(t *testing.T) {
+	if RouteName("a", "b") == "a.b." {
+		t.Errorf("Route name not well formed")
+	}
+}
 
 // Rendering & Persisting
 

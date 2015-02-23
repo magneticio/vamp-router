@@ -48,6 +48,11 @@
                     "name" : "test_be_1_a",
                     "unixSock" : "/tmp/vamp_test_be_1_a.sock",
                     "weight" : 100
+                },
+                {
+                    "name" : "deletable_server",
+                    "unixSock" : "/tmp/vamp_test_be_1_a.sock",
+                    "weight" : 100
                 }
             ],
             "proxyMode" : true,

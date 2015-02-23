@@ -2,48 +2,43 @@ package haproxy
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 	"sync"
 	"text/template"
-	"errors"
 )
 
 // Load a config from disk
 func (c *Config) GetConfigFromDisk(file string) error {
-	s, err := ioutil.ReadFile(file)
-	if err != nil {
+	if s, err := ioutil.ReadFile(file); err != nil {
 		return err
-	}
-
-	err = json.Unmarshal(s, &c)
-	if err != nil {
-		return err
+	} else {
+		if err := json.Unmarshal(s, &c); err != nil {
+			return err
+		}
 	}
 
 	c.Mutex = new(sync.RWMutex)
-	return err
+	return nil
 }
 
 // updates the weight of a server of a specific backend with a new weight
-func (c *Config) SetWeight(backend string, server string, weight int) error {
-
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
+func (c *Config) SetWeight(backend string, server string, weight int) *Error {
 
 	for _, be := range c.Backends {
 		if be.Name == backend {
 			for _, srv := range be.Servers {
 				if srv.Name == server {
 					srv.Weight = weight
+					return nil
 				}
 			}
 		}
 	}
 
-	return nil
+	return &Error{404, errors.New("no server found")}
 }
-
 
 // the transactions methods are kept separate so we can chain an arbitrary set of operations
 // on the Config object within one transaction. Alas, this burdons the developer with extra housekeeping
@@ -65,38 +60,37 @@ func (c *Config) EndReadTrans() {
 	c.Mutex.RUnlock()
 }
 
-
 // gets all frontends
 func (c *Config) GetFrontends() []*Frontend {
-
 	return c.Frontends
 }
 
 // gets a frontend
-func (c *Config) GetFrontend(name string) *Frontend {
+func (c *Config) GetFrontend(name string) (*Frontend, *Error) {
 
 	var result *Frontend
 
 	for _, fe := range c.Frontends {
 		if fe.Name == name {
-			result = fe
-			break
-
+			return fe, nil
 		}
 	}
-	return result
+	return result, &Error{404, errors.New("no frontend found")}
 }
 
 // adds a frontend
-func (c *Config) AddFrontend(frontend *Frontend) error {
+func (c *Config) AddFrontend(frontend *Frontend) *Error {
+
+	if c.FrontendExists(frontend.Name) {
+		return &Error{409, errors.New("frontend already exists")}
+	}
 
 	c.Frontends = append(c.Frontends, frontend)
 	return nil
-
 }
 
 // deletes a frontend
-func (c *Config) DeleteFrontend(name string) error {
+func (c *Config) DeleteFrontend(name string) *Error {
 
 	for i, fe := range c.Frontends {
 		if fe.Name == name {
@@ -104,7 +98,7 @@ func (c *Config) DeleteFrontend(name string) error {
 			return nil
 		}
 	}
-	return errors.New("no such frontend found")
+	return &Error{404, errors.New("no frontend found")}
 }
 
 // get the filters from a frontend
@@ -133,47 +127,46 @@ func (c *Config) AddFilter(frontend string, filter *Filter) error {
 }
 
 // delete a Filter from a frontend
-func (c *Config) DeleteFilter(frontendName string, filterName string) bool {
-
-	result := false
+func (c *Config) DeleteFilter(frontendName string, filterName string) *Error {
 
 	for _, fe := range c.Frontends {
 		if fe.Name == frontendName {
 			for i, filter := range fe.Filters {
 				if filter.Name == filterName {
 					fe.Filters = append(fe.Filters[:i], fe.Filters[i+1:]...)
-					result = true
-					break
+					return nil
 				}
 			}
 		}
 	}
-	return result
+	return &Error{404, errors.New("No filter found")}
 }
 
 // gets a backend
-func (c *Config) GetBackend(backend string) *Backend {
+func (c *Config) GetBackend(backend string) (*Backend, *Error) {
 
 	var result *Backend
 
 	for _, be := range c.Backends {
 		if be.Name == backend {
-			result = be
-			break
-
+			return be, nil
 		}
 	}
-	return result
+	return result, &Error{404, errors.New("no backend found")}
+
 }
 
 // gets all backends
 func (c *Config) GetBackends() []*Backend {
-
 	return c.Backends
 }
 
 // adds a frontend
-func (c *Config) AddBackend(backend *Backend) error {
+func (c *Config) AddBackend(backend *Backend) *Error {
+
+	if c.BackendExists(backend.Name) {
+		return &Error{409, errors.New("backend already exists")}
+	}
 
 	c.Backends = append(c.Backends, backend)
 	return nil
@@ -184,23 +177,35 @@ func (c *Config) AddBackend(backend *Backend) error {
 the configuration will crash Haproxy. This means some extra protection is put into this method to check
 if this backend is still used. If not, it can be deleted.
 */
-func (c *Config) DeleteBackend(name string) error {
+func (c *Config) DeleteBackend(name string) *Error {
 
 	if err := c.BackendUsed(name); err != nil {
-		return err 
-	} else {
-		for i, be := range c.Backends {
-			if be.Name == name {
-				c.Backends = append(c.Backends[:i], c.Backends[i+1:]...)
-				return nil
-			}
+		return err
+	}
+
+	for i, be := range c.Backends {
+		if be.Name == name {
+			c.Backends = append(c.Backends[:i], c.Backends[i+1:]...)
+			return nil
 		}
-		return errors.New("no such backend found")
-	} 
+	}
+	return &Error{404, errors.New("no backend found")}
 }
 
+// gets all servers of a specific backend
+func (c *Config) GetServers(backendName string) ([]*ServerDetail, *Error) {
 
-func (c *Config) GetServer(backendName string, serverName string) *ServerDetail {
+	var result []*ServerDetail
+
+	for _, be := range c.Backends {
+		if be.Name == backendName {
+			return be.Servers, nil
+		}
+	}
+	return result, &Error{404, errors.New("no servers found")}
+}
+
+func (c *Config) GetServer(backendName string, serverName string) (*ServerDetail, *Error) {
 
 	var result *ServerDetail
 
@@ -208,17 +213,16 @@ func (c *Config) GetServer(backendName string, serverName string) *ServerDetail 
 		if be.Name == backendName {
 			for _, srv := range be.Servers {
 				if srv.Name == serverName {
-					result = srv
-					break
+					return srv, nil
 				}
 			}
 		}
 	}
-	return result
+	return result, &Error{404, errors.New("no server found")}
 }
 
 // adds a Server
-func (c *Config) AddServer(backendName string, server *ServerDetail) error {
+func (c *Config) AddServer(backendName string, server *ServerDetail) *Error {
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {
@@ -226,10 +230,10 @@ func (c *Config) AddServer(backendName string, server *ServerDetail) error {
 			return nil
 		}
 	}
-	return errors.New("No such backend found")
+	return &Error{404, errors.New("No backend found")}
 }
 
-func (c *Config) DeleteServer(backendName string, serverName string) error {
+func (c *Config) DeleteServer(backendName string, serverName string) *Error {
 	for _, be := range c.Backends {
 		if be.Name == backendName {
 			for i, srv := range be.Servers {
@@ -240,21 +244,7 @@ func (c *Config) DeleteServer(backendName string, serverName string) error {
 			}
 		}
 	}
-	return errors.New("no such server found")
-}
-
-// gets all servers of a specific backend
-func (c *Config) GetServers(backendName string) []*ServerDetail {
-
-	var result []*ServerDetail
-
-	for _, be := range c.Backends {
-		if be.Name == backendName {
-			result = be.Servers
-			break
-		}
-	}
-	return result
+	return &Error{404, errors.New("no such server found")}
 }
 
 // Render a config object to a HAproxy config file
@@ -313,8 +303,8 @@ func (c *Config) RenderAndPersist() error {
 
 // helper function to check if a Frontend exists
 func (c *Config) FrontendExists(name string) bool {
-	
-	for _,frontend := range c.Frontends {
+
+	for _, frontend := range c.Frontends {
 		if frontend.Name == name {
 			return true
 		}
@@ -324,8 +314,8 @@ func (c *Config) FrontendExists(name string) bool {
 
 // helper function to check if a Backend exists
 func (c *Config) BackendExists(name string) bool {
-	
-	for _,backend := range c.Backends {
+
+	for _, backend := range c.Backends {
 		if backend.Name == name {
 			return true
 		}
@@ -333,18 +323,17 @@ func (c *Config) BackendExists(name string) bool {
 	return false
 }
 
-
 // helper function to check if a Backend is used by a Frontend as a default backend or a filter destination
-func (c *Config) BackendUsed(name string) error {
+func (c *Config) BackendUsed(name string) *Error {
 
 	if c.BackendExists(name) {
-		for _,frontend := range c.Frontends {
+		for _, frontend := range c.Frontends {
 			if frontend.DefaultBackend == name {
-				return errors.New("Backend still in use by: " + frontend.Name)
+				return &Error{500, errors.New("Backend still in use by: " + frontend.Name)}
 			}
-			for _,filter := range frontend.Filters {
+			for _, filter := range frontend.Filters {
 				if filter.Destination == name {
-					return errors.New("Backend still in use by: " + frontend.Name + ".Filters." + filter.Name) 
+					return &Error{500, errors.New("Backend still in use by: " + frontend.Name + ".Filters." + filter.Name)}
 				}
 			}
 		}
@@ -353,11 +342,10 @@ func (c *Config) BackendUsed(name string) error {
 	return nil
 }
 
-
 // helper function to check if a Route exists
 func (c *Config) RouteExists(name string) bool {
-	
-	for _,route := range c.Routes {
+
+	for _, route := range c.Routes {
 		if route.Name == name {
 			return true
 		}
@@ -367,7 +355,7 @@ func (c *Config) RouteExists(name string) bool {
 
 // helper function to check if a Group exists
 func (c *Config) GroupExists(routeName string, groupName string) bool {
-	
+
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
 			for _, grp := range rt.Groups {
@@ -382,13 +370,13 @@ func (c *Config) GroupExists(routeName string, groupName string) bool {
 
 // helper function to check if a Server exists in a specific Group
 func (c *Config) ServerExists(routeName string, groupName string, serverName string) bool {
-	
+
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
 			for _, grp := range rt.Groups {
 				if grp.Name == groupName {
-					for _,server := range grp.Servers {
-						if server.Name == serverName{
+					for _, server := range grp.Servers {
+						if server.Name == serverName {
 							return true
 						}
 					}

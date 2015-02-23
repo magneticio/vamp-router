@@ -4,6 +4,7 @@ import (
 	"github.com/magneticio/vamp-loadbalancer/helpers"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"testing"
 )
 
@@ -15,11 +16,11 @@ func TestRuntime_SetNewPid(t *testing.T) {
 
 	//make sure there is no pidfile present
 	os.Remove(PID_FILE)
-	result := haRuntime.SetPid(PID_FILE)
-	if result != true {
-		t.Fatalf("err: Failed to create pid file")
+
+	if err := haRuntime.SetPid(PID_FILE); err != nil {
+		t.Fatalf(err.Error())
 	}
-	os.Remove(PID_FILE)
+
 }
 
 func TestRuntime_UseExistingPid(t *testing.T) {
@@ -27,19 +28,93 @@ func TestRuntime_UseExistingPid(t *testing.T) {
 	//create a pid file
 	emptyPid := []byte("12356")
 	ioutil.WriteFile(PID_FILE, emptyPid, 0644)
+	defer os.Remove(PID_FILE)
 
-	result := haRuntime.SetPid(PID_FILE)
-	if result != false {
+	if err := haRuntime.SetPid(PID_FILE); err == nil {
 		t.Fatalf("err: Failed to read existing pid file")
 	}
-	os.Remove(PID_FILE)
+
 }
 
-// for some reason, this always returns 1 (error).
-// func TestRuntime_Reload(t *testing.T) {
-// 	haRuntime.SetPid(PID_FILE)
-// 	err := haRuntime.Reload(&haConfig)
-// 	if err != nil {
-// 		t.Fatalf("err: %v", err)
-// 	}
-// }
+// all tests againt a running Haproxy are for now lumped together. TODO: split it up
+func TestRuntime_HaproxyFunctions(t *testing.T) {
+
+	/*
+
+		Preamble to set up and tear down haproxy
+
+	*/
+
+	//create a pid file
+	emptyPid := []byte("")
+	ioutil.WriteFile(PID_FILE, emptyPid, 0644)
+	defer os.Remove(PID_FILE)
+
+	test_config_file, err := ioutil.ReadFile(PREFILLED_CONFIG_FILE)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	err = ioutil.WriteFile("/tmp/haproxy_test.cfg", test_config_file, 0664)
+	defer os.Remove("/tmp/haproxy_test.cfg")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	/*
+	 Start actual tests
+	*/
+
+	// run first time, pid should be empty
+	haConfig.ConfigFile = "/tmp/haproxy_test.cfg"
+	if err := haRuntime.Reload(&haConfig); err != nil {
+		t.Fatal("failed to reload Haproxy with empty pif: " + err.Error())
+	}
+	defer DestroyHaproxy()
+
+	// run it a second time, pid should be filled
+	if err := haRuntime.Reload(&haConfig); err != nil {
+		t.Fatal("failed to reload Haproxy with filled pid: " + err.Error())
+	}
+
+	//run it a third time with wrong config file path
+	haConfig.ConfigFile = "this_is_totally_wrong"
+
+	if err := haRuntime.Reload(&haConfig); err == nil {
+		t.Fatal("There should be an error when provided with a wrong path")
+	}
+
+	// weight
+
+	if _, err := haRuntime.SetWeight("test_be_1", "test_be_1_a", 50); err != nil {
+		t.Error("failed to update weight on server")
+	}
+
+	if result, _ := haRuntime.SetWeight("test_be_1", "no_such_server", 50); result != "No such server.\n\n" {
+		t.Error("should return error when setting weight on non existent server: " + result)
+	}
+
+	// acl function not yet done
+	// if _, err := haRuntime.SetAcl("test_fe_bd", "test_acl_1", "hdr_sub(user-agent) MSIE"); err != nil {
+	// 	t.Error("failed to set acl on server")
+	// }
+
+	// getInfo
+	if _, err := haRuntime.GetInfo(); err != nil {
+		t.Error("failed to info from on haproxy")
+	}
+
+	// getStats
+	statsType := []string{"all", "frontend", "backend", "server"}
+
+	for _, stat := range statsType {
+		if _, err := haRuntime.GetStats(stat); err != nil {
+			t.Error("failed to all stats from haproxy")
+		}
+	}
+
+}
+
+func DestroyHaproxy() {
+	_ = exec.Command("killall", "haproxy").Run()
+}

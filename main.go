@@ -101,8 +101,7 @@ func main() {
 	}
 
 	// set the Pid file
-	done := haRuntime.SetPid(haConfig.PidFile)
-	if done == false {
+	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
 		log.Notice("Pidfile exists at %s, proceeding...", pidFilePath)
 	} else {
 		log.Notice("Created new pidfile...")

@@ -26,13 +26,11 @@ func GetBackend(c *gin.Context) {
 
 	backend := c.Params.ByName("name")
 
-	result := Config(c).GetBackend(backend)
-	if result != nil {
-		c.JSON(200, result)
+	if result, err := Config(c).GetBackend(backend); err != nil {
+		HandleError(c, err)
 	} else {
-		c.String(404, "no such backend")
+		c.JSON(200, result)
 	}
-
 }
 
 func PostBackend(c *gin.Context) {
@@ -44,11 +42,10 @@ func PostBackend(c *gin.Context) {
 
 	if c.Bind(&backend) {
 
-		if !Config(c).BackendExists(backend.Name){
-		Config(c).AddBackend(&backend)
-		HandleReload(c, Config(c), 201, "created backend")
+		if err := Config(c).AddBackend(&backend); err != nil {
+			HandleError(c, err)
 		} else {
-			c.String(409,"backend already exists")
+			HandleReload(c, Config(c), 201, "created backend")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -63,7 +60,7 @@ func DeleteBackend(c *gin.Context) {
 	name := c.Params.ByName("name")
 
 	if err := Config(c).DeleteBackend(name); err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted backend")
 	}
@@ -73,14 +70,13 @@ func GetServers(c *gin.Context) {
 
 	Config(c).BeginReadTrans()
 	defer Config(c).EndReadTrans()
-	
+
 	backend := c.Params.ByName("name")
 
-	result := Config(c).GetServers(backend)
-	if result != nil {
-		c.JSON(200, result)
+	if result, err := Config(c).GetServers(backend); err != nil {
+		HandleError(c, err)
 	} else {
-		c.String(404, "no such server")
+		c.JSON(200, result)
 	}
 }
 
@@ -92,11 +88,10 @@ func GetServer(c *gin.Context) {
 	backend := c.Params.ByName("name")
 	server := c.Params.ByName("server")
 
-	result := Config(c).GetServer(backend, server)
-	if result != nil {
-		c.JSON(200, result)
+	if result, err := Config(c).GetServer(backend, server); err != nil {
+		HandleError(c, err)
 	} else {
-		c.String(404, "no such server")
+		c.JSON(200, result)
 	}
 }
 
@@ -110,10 +105,10 @@ func PostServer(c *gin.Context) {
 
 	if c.Bind(&server) {
 		if err := Config(c).AddServer(backend, &server); err != nil {
-			c.String(404, err.Error())
+			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), 201, "created server")
-		} 
+		}
 	} else {
 		c.String(500, "Invalid JSON")
 	}
@@ -143,9 +138,8 @@ func PutServerWeight(c *gin.Context) {
 			default:
 
 				//update the Config(c) object with the new weight
-				err = Config(c).SetWeight(backend, server, json.Weight)
-				if err != nil {
-					c.String(500, err.Error())
+				if err := Config(c).SetWeight(backend, server, json.Weight); err != nil {
+					HandleError(c, err)
 				} else {
 					HandleReload(c, Config(c), 200, "updated server weight")
 				}
@@ -165,7 +159,7 @@ func DeleteServer(c *gin.Context) {
 	server := c.Params.ByName("server")
 
 	if err := Config(c).DeleteServer(backend, server); err != nil {
-		c.String(404, "no such server")
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted server")
 	}

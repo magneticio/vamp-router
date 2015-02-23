@@ -6,12 +6,12 @@ import (
 )
 
 func GetRoutes(c *gin.Context) {
-	
+
 	Config(c).BeginReadTrans()
 	defer Config(c).EndReadTrans()
 
 	result := Config(c).GetRoutes()
-	if result != nil {
+	if Config(c).GetRoutes() != nil {
 		c.JSON(200, result)
 	} else {
 		c.String(404, "no routes found")
@@ -26,9 +26,8 @@ func GetRoute(c *gin.Context) {
 
 	routeName := c.Params.ByName("route")
 
-	result, err := Config(c).GetRoute(routeName)
-	if err != nil {
-		c.String(404, err.Error())
+	if result, err := Config(c).GetRoute(routeName); err != nil {
+		HandleError(c, err)
 	} else {
 		c.JSON(200, result)
 	}
@@ -43,8 +42,8 @@ func PutRoute(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 
 	if c.Bind(&route) {
-		if err := Config(c).UpdateRoute(routeName,&route); err != nil {
-			c.String(404, err.Error())
+		if err := Config(c).UpdateRoute(routeName, &route); err != nil {
+			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), 200, "updated route")
 		}
@@ -61,11 +60,10 @@ func PostRoute(c *gin.Context) {
 	var route haproxy.Route
 
 	if c.Bind(&route) {
-		if !Config(c).RouteExists(route.Name) {
-			Config(c).AddRoute(&route)
-			HandleReload(c, Config(c), 201, "created route")
+		if err := Config(c).AddRoute(&route); err != nil {
+			HandleError(c, err)
 		} else {
-			c.String(409,"route already exists")
+			HandleReload(c, Config(c), 201, "created route")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -80,7 +78,7 @@ func DeleteRoute(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 
 	if err := Config(c).DeleteRoute(routeName); err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted route")
 	}
@@ -95,14 +93,14 @@ func GetRouteGroups(c *gin.Context) {
 
 	result, err := Config(c).GetRouteGroups(routeName)
 	if err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		c.JSON(200, result)
 	}
 }
 
 func GetRouteGroup(c *gin.Context) {
-	
+
 	Config(c).BeginReadTrans()
 	defer Config(c).EndReadTrans()
 
@@ -111,7 +109,7 @@ func GetRouteGroup(c *gin.Context) {
 
 	result, err := Config(c).GetRouteGroup(routeName, groupName)
 	if err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		c.JSON(200, result)
 	}
@@ -128,8 +126,8 @@ func PutRouteGroup(c *gin.Context) {
 	groupName := c.Params.ByName("group")
 
 	if c.Bind(&group) {
-		if err := Config(c).UpdateRouteGroup(routeName,groupName,&group); err != nil {
-			c.String(404, err.Error())
+		if err := Config(c).UpdateRouteGroup(routeName, groupName, &group); err != nil {
+			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), 200, "updated group")
 		}
@@ -137,7 +135,6 @@ func PutRouteGroup(c *gin.Context) {
 		c.String(500, "Invalid JSON")
 	}
 }
-
 
 func PostRouteGroup(c *gin.Context) {
 
@@ -148,15 +145,10 @@ func PostRouteGroup(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 
 	if c.Bind(&group) {
-		if !Config(c).GroupExists(routeName,group.Name) {
-			err := Config(c).AddRouteGroup(routeName,&group)
-			if err != nil {
-					c.String(404, err.Error())
-				} else {
-					HandleReload(c, Config(c), 201, "created group")
-				}
+		if err := Config(c).AddRouteGroup(routeName, &group); err != nil {
+			HandleError(c, err)
 		} else {
-			c.String(409,"group already exists")
+			HandleReload(c, Config(c), 201, "created group")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -171,8 +163,8 @@ func DeleteRouteGroup(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 	groupName := c.Params.ByName("group")
 
-	if err := Config(c).DeleteRouteGroup(routeName,groupName); err != nil {
-		c.String(404, err.Error())
+	if err := Config(c).DeleteRouteGroup(routeName, groupName); err != nil {
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted route")
 	}
@@ -186,9 +178,9 @@ func GetGroupServers(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 	groupName := c.Params.ByName("group")
 
-	result, err := Config(c).GetGroupServers(routeName,groupName)
+	result, err := Config(c).GetGroupServers(routeName, groupName)
 	if err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		c.JSON(200, result)
 	}
@@ -203,17 +195,16 @@ func GetGroupServer(c *gin.Context) {
 	groupName := c.Params.ByName("group")
 	serverName := c.Params.ByName("server")
 
-
-	result, err := Config(c).GetGroupServer(routeName,groupName,serverName)
+	result, err := Config(c).GetGroupServer(routeName, groupName, serverName)
 	if err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		c.JSON(200, result)
 	}
 }
 
 func DeleteGroupServer(c *gin.Context) {
-	
+
 	Config(c).BeginWriteTrans()
 	defer Config(c).EndWriteTrans()
 
@@ -221,13 +212,12 @@ func DeleteGroupServer(c *gin.Context) {
 	groupName := c.Params.ByName("group")
 	serverName := c.Params.ByName("server")
 
-	if err := Config(c).DeleteGroupServer(routeName,groupName,serverName); err != nil {
-		c.String(404, err.Error())
+	if err := Config(c).DeleteGroupServer(routeName, groupName, serverName); err != nil {
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted server")
 	}
 }
-
 
 func PostGroupServer(c *gin.Context) {
 
@@ -239,15 +229,10 @@ func PostGroupServer(c *gin.Context) {
 	groupName := c.Params.ByName("group")
 
 	if c.Bind(&server) {
-		if !Config(c).ServerExists(routeName,groupName,server.Name) {
-			err := Config(c).AddGroupServer(routeName,groupName,&server)
-			if err != nil {
-					c.String(404, err.Error())
-				} else {
-					HandleReload(c, Config(c), 201, "created server")
-			}
+		if err := Config(c).AddGroupServer(routeName, groupName, &server); err != nil {
+			HandleError(c, err)
 		} else {
-			c.String(409,"server already exists")
+			HandleReload(c, Config(c), 201, "created server")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -265,8 +250,8 @@ func PutGroupServer(c *gin.Context) {
 	serverName := c.Params.ByName("server")
 
 	if c.Bind(&server) {
-		if err := Config(c).UpdateGroupServer(routeName,groupName,serverName,&server); err != nil {
-			c.String(404, err.Error())
+		if err := Config(c).UpdateGroupServer(routeName, groupName, serverName, &server); err != nil {
+			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), 200, "updated server")
 		}

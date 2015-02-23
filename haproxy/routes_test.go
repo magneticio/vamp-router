@@ -12,8 +12,8 @@ const (
 	// EXAMPLE       = "../test/test_config1.json"
 	// JSON_FILE     = "/tmp/vamp_lb_test.json"
 	// PID_FILE      = "/tmp/vamp_lb_test.pid"
-	ROUTE_JSON = "../test/test_route.json"
-	GROUP_JSON = "../test/test_group.json"
+	ROUTE_JSON  = "../test/test_route.json"
+	GROUP_JSON  = "../test/test_group.json"
 	SERVER_JSON = "../test/test_server1.json"
 )
 
@@ -27,79 +27,103 @@ func TestConfiguration_GetRoutes(t *testing.T) {
 
 func TestConfiguration_GetRoute(t *testing.T) {
 
-	route, err := haConfig.GetRoute("test_route_1")
-	if route.Name != "test_route_1" && err == nil {
+	if route, err := haConfig.GetRoute("test_route_1"); route.Name != "test_route_1" && err == nil {
 		t.Errorf("Failed to get frontend")
 	}
 
-	_, err = haConfig.GetRoute("non_existent_route")
-	if err == nil {
+	if _, err := haConfig.GetRoute("non_existent_route"); err == nil {
 		t.Errorf("Should return nil on non existent route")
 	}
 
 }
 
-func TestConfiguration_PostRoute(t *testing.T) {
-	j, err := ioutil.ReadFile(ROUTE_JSON)
+func TestConfiguration_AddRoute(t *testing.T) {
+	j, _ := ioutil.ReadFile(ROUTE_JSON)
 	var route *Route
-	err = json.Unmarshal(j, &route)
+	_ = json.Unmarshal(j, &route)
 
-	if haConfig.AddRoute(route) != nil || err != nil {
+	if haConfig.AddRoute(route) != nil {
 		t.Errorf("Failed to add route")
+	}
+
+	if haConfig.AddRoute(route) == nil {
+		t.Errorf("Adding should fail when a route already exists")
 	}
 }
 
 func TestConfiguration_UpdateRoute(t *testing.T) {
-	j, err := ioutil.ReadFile(ROUTE_JSON)
+	j, _ := ioutil.ReadFile(ROUTE_JSON)
 	var route *Route
-	err = json.Unmarshal(j, &route)
+	if err := json.Unmarshal(j, &route); err != nil {
+		t.Errorf(err.Error())
+	}
 	route.Protocol = "tcp"
 
-	err = haConfig.UpdateRoute("test_route_2", route)
-	if err != nil {
-		t.Errorf("Failed to update route")
+	if err := haConfig.UpdateRoute("test_route_2", route); err != nil {
+		t.Errorf(err.Error())
 	}
 
-	route, err = haConfig.GetRoute("test_route_2")
-	if err != nil && route.Protocol != "tcp" {
+	if route, err := haConfig.GetRoute("test_route_2"); err != nil && route.Protocol != "tcp" {
 		t.Errorf("Failed to update route")
 	}
 }
 
-
 func TestConfiguration_GetRouteGroups(t *testing.T) {
 
-	groups, err := haConfig.GetRouteGroups("test_route_1")
-	if groups[0].Name != "group_a" || err != nil {
+	if groups, err := haConfig.GetRouteGroups("test_route_1"); groups[0].Name != "group_a" || err != nil {
 		t.Errorf("Failed to get groups")
+	}
+
+	if _, err := haConfig.GetRouteGroups("non_existent_group"); err == nil {
+		t.Errorf("Should return nil on non existent group")
 	}
 }
 
 func TestConfiguration_GetRouteGroup(t *testing.T) {
 
-	group, err := haConfig.GetRouteGroup("test_route_1","group_a")
-	if group.Name != "group_a" || err != nil {
+	if group, err := haConfig.GetRouteGroup("test_route_1", "group_a"); group.Name != "group_a" || err != nil {
 		t.Errorf("Failed to get group")
 	}
 
-	if _, err = haConfig.GetRouteGroup("non_existent_route","group_a"); err == nil {
-				t.Errorf("Should return nil on non existent route")
+	if _, err := haConfig.GetRouteGroup("non_existent_route", "group_a"); err == nil {
+		t.Errorf("Should return nil on non existent route")
 	}
-		if _, err = haConfig.GetRouteGroup("test_route_1","non_existent_group"); err == nil {
-				t.Errorf("Should return nil on non existent group")
+	if _, err := haConfig.GetRouteGroup("test_route_1", "non_existent_group"); err == nil {
+		t.Errorf("Should return nil on non existent group")
 	}
 
 }
 
-func TestConfiguration_PostRouteGroup(t *testing.T) {
-	j, err := ioutil.ReadFile(GROUP_JSON)
+func TestConfiguration_AddRouteGroup(t *testing.T) {
+	j, _ := ioutil.ReadFile(GROUP_JSON)
 	var group *Group
-	err = json.Unmarshal(j, &group)
+	_ = json.Unmarshal(j, &group)
 
 	route := "test_route_1"
 
-	if haConfig.AddRouteGroup(route,group) != nil || err != nil {
+	if haConfig.AddRouteGroup(route, group) != nil {
 		t.Errorf("Failed to add route")
+	}
+
+	if haConfig.AddRouteGroup(route, group) == nil {
+		t.Errorf("Adding should fail when a group already exists")
+	}
+
+	if haConfig.AddRouteGroup("non_existent_group", group) == nil {
+		t.Errorf("Should return nil on non existent route")
+	}
+
+}
+
+func TestConfiguration_UpdateRouteGroup(t *testing.T) {
+	j, _ := ioutil.ReadFile(GROUP_JSON)
+	var group *Group
+	_ = json.Unmarshal(j, &group)
+
+	group.Weight = 1
+
+	if err := haConfig.UpdateRouteGroup("test_route_1", group.Name, group); err != nil {
+		t.Errorf(err.Error())
 	}
 
 }
@@ -108,14 +132,47 @@ func TestConfiguration_DeleteRouteGroup(t *testing.T) {
 
 	route := "test_route_1"
 
-	err := haConfig.DeleteRouteGroup(route,"group_c")
-	if err != nil {
+	if err := haConfig.DeleteRouteGroup(route, "group_c"); err != nil {
 		t.Errorf("Failed to delete route")
 	}
 
-	err = haConfig.DeleteRoute("non_existent_group")
-	if err == nil {
+	if haConfig.DeleteRouteGroup("non_existent_route", "group_a") == nil {
+		t.Errorf("Should return nil on non existent route")
+	}
+
+	if haConfig.DeleteRouteGroup(route, "non_existent_group") == nil {
 		t.Errorf("Should return nil on non existent group")
+	}
+}
+
+func TestConfiguration_GetGroupServers(t *testing.T) {
+
+	if servers, err := haConfig.GetGroupServers("test_route_1", "group_a"); err != nil {
+		t.Errorf("Failed to get servers")
+	} else {
+		if servers[0].Name != "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd" {
+			t.Errorf("Failed to get servers")
+		}
+	}
+
+	if _, err := haConfig.GetGroupServers("non_existent_route", "group_a"); err == nil {
+		t.Errorf("Should return nil on non existent route")
+	}
+
+	if _, err := haConfig.GetGroupServers("test_route_1", "non_existent_group"); err == nil {
+		t.Errorf("Should return nil on non existent group")
+	}
+
+}
+
+func TestConfiguration_GetGroupServer(t *testing.T) {
+
+	if _, err := haConfig.GetGroupServer("test_route_1", "group_a", "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd"); err != nil {
+		t.Errorf("Failed to get server")
+	}
+
+	if _, err := haConfig.GetGroupServer("test_route_1", "group_a", "non_existent_server"); err == nil {
+		t.Errorf("Should return nil on non existent server")
 	}
 }
 
@@ -124,22 +181,24 @@ func TestConfiguration_AddGroupServer(t *testing.T) {
 	route := "test_route_1"
 	group := "group_a"
 
-	j, err := ioutil.ReadFile(GROUP_JSON)
+	j, _ := ioutil.ReadFile(GROUP_JSON)
 	var server Server
 
-	err = json.Unmarshal(j, &server)
+	_ = json.Unmarshal(j, &server)
 
-	err = haConfig.AddGroupServer(route,group,&server)
-	if err != nil {
-		t.Errorf("Failed to create server")
+	if err := haConfig.AddGroupServer(route, group, &server); err != nil {
+		t.Errorf(err.Error())
 	}
 
-	err = haConfig.AddGroupServer(route,"non_existent_group",&server)
-	if err == nil {
+	if err := haConfig.AddGroupServer(route, group, &server); err == nil {
+		t.Errorf("Adding should fail when a server already exists")
+	}
+
+	if err := haConfig.AddGroupServer(route, "non_existent_group", &server); err == nil {
 		t.Errorf("Should return error on non existent group")
 	}
-	err = haConfig.AddGroupServer("non_existent_route",group,&server)
-	if err == nil {
+
+	if err := haConfig.AddGroupServer("non_existent_route", group, &server); err == nil {
 		t.Errorf("Should return error on non existent route")
 	}
 
@@ -158,48 +217,42 @@ func TestConfiguration_DeleteGroupServer(t *testing.T) {
 	group := "group_a"
 	server := "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd"
 
-	err := haConfig.DeleteGroupServer(route,group,server)
-	if err != nil {
+	if err := haConfig.DeleteGroupServer(route, group, server); err != nil {
 		t.Errorf("Failed to delete server")
 	}
 
-	err = haConfig.DeleteGroupServer(route,group,"non_existent_server")
-	if err == nil {
+	if err := haConfig.DeleteGroupServer(route, group, "non_existent_server"); err == nil {
 		t.Errorf("Should return nil on non existent server")
 	}
 }
 
 func TestConfiguration_UpdateGroupServer(t *testing.T) {
 
-	j, err := ioutil.ReadFile(SERVER_JSON)
+	j, _ := ioutil.ReadFile(SERVER_JSON)
 
 	var server *Server
-	err = json.Unmarshal(j, &server)
+	_ = json.Unmarshal(j, &server)
 	serverToUpdate := "server_to_be_updated"
 	server.Port = 1234
 	routeName := "test_route_2"
 	groupName := "group_to_be_updated"
 
-	err = haConfig.UpdateGroupServer(routeName,groupName,serverToUpdate,server)
-	if err != nil {
+	if err := haConfig.UpdateGroupServer(routeName, groupName, serverToUpdate, server); err != nil {
 		t.Errorf(err.Error())
 	}
-	
-	server, err = haConfig.GetGroupServer(routeName, groupName, server.Name)
-	if err != nil && server.Port != 1234 {
-		t.Errorf(err.Error()	)
+
+	if server, err := haConfig.GetGroupServer(routeName, groupName, server.Name); err != nil && server.Port != 1234 {
+		t.Errorf(err.Error())
 	}
 }
 
 func TestConfiguration_DeleteRoute(t *testing.T) {
 
-	err := haConfig.DeleteRoute("test_route_2")
-	if err != nil {
+	if err := haConfig.DeleteRoute("test_route_2"); err != nil {
 		t.Errorf("Failed to delete route")
 	}
 
-	err = haConfig.DeleteRoute("non_existent_route")
-	if err == nil {
+	if err := haConfig.DeleteRoute("non_existent_route"); err == nil {
 		t.Errorf("Should return nil on non existent route")
 	}
 }

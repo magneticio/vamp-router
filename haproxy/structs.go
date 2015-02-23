@@ -64,16 +64,15 @@ type Server struct {
 }
 
 type ServerDetail struct {
-	Name string `json:"name" binding: "required"`
-	Host string `json:"host" binding: "required"`
-	Port int    `json:"port" binding: "required"`
+	Name          string `json:"name" binding: "required"`
+	Host          string `json:"host" binding: "required"`
+	Port          int    `json:"port" binding: "required"`
 	UnixSock      string `json:"unixSock"`
 	Weight        int    `json:"weight" binding:"required"`
 	MaxConn       int    `json:"maxconn"`
 	Check         bool   `json:"check"`
 	CheckInterval int    `json:"checkInterval"`
 }
-
 
 type Runtime struct {
 	Binary string
@@ -94,11 +93,11 @@ type Config struct {
 
 // Defines a single haproxy "backend".
 type Backend struct {
-	Name           string           `json:"name" binding:"required"`
-	Mode           string           `json:"mode" binding:"required"`
-	Servers 			 []*ServerDetail 				`json:"servers" binding:"required"`
-	Options        ProxyOptions     `json:"options"`
-	ProxyMode      bool             `json:"proxyMode" binding:"required"`
+	Name      string          `json:"name" binding:"required"`
+	Mode      string          `json:"mode" binding:"required"`
+	Servers   []*ServerDetail `json:"servers" binding:"required"`
+	Options   ProxyOptions    `json:"options"`
+	ProxyMode bool            `json:"proxyMode" binding:"required"`
 }
 
 // Defines a single haproxy "frontend".
@@ -111,9 +110,9 @@ type Frontend struct {
 	SockProtocol   string       `json:"sockProtocol"`
 	Options        ProxyOptions `json:"options"`
 	DefaultBackend string       `json:"defaultBackend" binding:"required"`
-	Filters           []*Filter `json:"filters,omitempty"`
-	HttpQuota Quota   					`json:"httpQuota,omitempty"`
-	TcpQuota  Quota   					`json:"tcpQuota,omitempty"`
+	Filters        []*Filter    `json:"filters,omitempty"`
+	HttpQuota      Quota        `json:"httpQuota,omitempty"`
+	TcpQuota       Quota        `json:"tcpQuota,omitempty"`
 }
 
 type ProxyOptions struct {
@@ -246,4 +245,15 @@ type Info struct {
 	Idle_pct                    string `json:"Idle_pct"`
 	node                        string `json:"node"`
 	description                 string `json:"description"`
+}
+
+// custom error that allows us to define the HTTP return code that should be used in different
+// error situations
+type Error struct {
+	Code int
+	Err  error
+}
+
+func (e *Error) Error() string {
+	return e.Err.Error()
 }

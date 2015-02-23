@@ -26,13 +26,11 @@ func GetFrontend(c *gin.Context) {
 
 	frontend := c.Params.ByName("name")
 
-	result := Config(c).GetFrontend(frontend)
-	if result != nil {
-		c.JSON(200, result)
+	if result, err := Config(c).GetFrontend(frontend); err != nil {
+		HandleError(c, err)
 	} else {
-		c.String(404, "no such frontend")
+		c.JSON(200, result)
 	}
-
 }
 
 func PostFrontend(c *gin.Context) {
@@ -43,11 +41,10 @@ func PostFrontend(c *gin.Context) {
 	var frontend haproxy.Frontend
 
 	if c.Bind(&frontend) {
-		if !Config(c).FrontendExists(frontend.Name) {
-		Config(c).AddFrontend(&frontend)
-		HandleReload(c, Config(c), 201, "created frontend")
+		if err := Config(c).AddFrontend(&frontend); err != nil {
+			HandleError(c, err)
 		} else {
-			c.String(409,"frontend already exists")
+			HandleReload(c, Config(c), 201, "created frontend")
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -57,12 +54,12 @@ func PostFrontend(c *gin.Context) {
 func DeleteFrontend(c *gin.Context) {
 
 	Config(c).BeginWriteTrans()
-	defer Config(c).EndWriteTrans()	
+	defer Config(c).EndWriteTrans()
 
 	frontendName := c.Params.ByName("name")
 
 	if err := Config(c).DeleteFrontend(frontendName); err != nil {
-		c.String(404, err.Error())
+		HandleError(c, err)
 	} else {
 		HandleReload(c, Config(c), 200, "deleted frontend")
 	}
@@ -71,7 +68,7 @@ func DeleteFrontend(c *gin.Context) {
 func GetFrontendFilters(c *gin.Context) {
 
 	Config(c).BeginReadTrans()
-	defer Config(c).EndReadTrans()	
+	defer Config(c).EndReadTrans()
 
 	frontend := c.Params.ByName("name")
 
@@ -83,7 +80,7 @@ func GetFrontendFilters(c *gin.Context) {
 func PostFrontendFilter(c *gin.Context) {
 
 	Config(c).BeginWriteTrans()
-	defer Config(c).EndWriteTrans()		
+	defer Config(c).EndWriteTrans()
 
 	var Filter haproxy.Filter
 	frontend := c.Params.ByName("name")
@@ -99,14 +96,14 @@ func PostFrontendFilter(c *gin.Context) {
 func DeleteFrontendFilter(c *gin.Context) {
 
 	Config(c).BeginWriteTrans()
-	defer Config(c).EndWriteTrans()	
+	defer Config(c).EndWriteTrans()
 
 	frontendName := c.Params.ByName("name")
 	FilterName := c.Params.ByName("Filter_name")
 
-	if Config(c).DeleteFilter(frontendName, FilterName) {
-		HandleReload(c, Config(c), 200, "deleted Filter")
+	if err := Config(c).DeleteFilter(frontendName, FilterName); err != nil {
+		HandleError(c, err)
 	} else {
-		c.String(404, "no such Filter")
+		HandleReload(c, Config(c), 200, "deleted Filter")
 	}
 }

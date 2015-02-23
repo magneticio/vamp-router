@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-loadbalancer/haproxy"
 	"github.com/magneticio/vamp-loadbalancer/metrics"
@@ -78,12 +79,11 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.PUT("/routes/:route/groups/:group", PutRouteGroup)
 		v1.DELETE("/routes/:route/groups/:group", DeleteRouteGroup)
 
-
 		v1.GET("/routes/:route/groups/:group/servers", GetGroupServers)
-	  v1.GET("/routes/:route/groups/:group/servers/:server", GetGroupServer)
-	  v1.PUT("/routes/:route/groups/:group/servers/:server", PutGroupServer)
-	  v1.POST("/routes/:route/groups/:group/servers", PostGroupServer)
-	  v1.DELETE("/routes/:route/groups/:group/servers/:server", DeleteGroupServer)
+		v1.GET("/routes/:route/groups/:group/servers/:server", GetGroupServer)
+		v1.PUT("/routes/:route/groups/:group/servers/:server", PutGroupServer)
+		v1.POST("/routes/:route/groups/:group/servers", PostGroupServer)
+		v1.DELETE("/routes/:route/groups/:group/servers/:server", DeleteGroupServer)
 		/*
 		   Info
 		*/
@@ -93,7 +93,7 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 	return r
 }
 
-// Handles the reloading and persisting of the Haproxy config after a successful mutation of the 
+// Handles the reloading and persisting of the Haproxy config after a successful mutation of the
 // config object.
 func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
 
@@ -101,17 +101,27 @@ func HandleReload(c *gin.Context, config *haproxy.Config, status int, message st
 
 	err := config.RenderAndPersist()
 	if err != nil {
-		c.String(500, "Error rendering config file")
+		HandleError(c, &haproxy.Error{500, errors.New("Error rendering config file")})
 		return
 	}
 
 	err = runtime.Reload(config)
 	if err != nil {
-		c.String(500, "Error reloading the HAproxy configuration")
+		HandleError(c, &haproxy.Error{500, errors.New("Error reloading the HAproxy configuration")})
 		return
 	}
 
+	HandleSucces(c, status, message)
+}
+
+// Handles the simple successful return status
+func HandleSucces(c *gin.Context, status int, message string) {
 	c.String(status, message)
+}
+
+// Handles the return of an error from the Haproxy object
+func HandleError(c *gin.Context, err *haproxy.Error) {
+	c.String(err.Code, err.Error())
 }
 
 // helper methods to grab the injected Config from the Http context

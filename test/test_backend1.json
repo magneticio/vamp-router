@@ -1,10 +1,10 @@
 {
-    "name" : "deletable_backend",
+    "name" : "addable_backend",
     "mode" : "http",
     "servers" : [
         {
-            "name" : "deletable",
-            "unixSock" : "/tmp/vamp_test_be_1_a.sock",
+            "name" : "addable",
+            "unixSock" : "/tmp/vamp_test_be_5_a.sock",
             "weight" : 100
         }
     ],

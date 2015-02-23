@@ -15,41 +15,20 @@ import (
 	"strings"
 )
 
-func (r *Runtime) SetPid(pidfile string) bool {
+// returns an error if the file was already there
+func (r *Runtime) SetPid(pidfile string) error {
 
 	//Create and empty pid file on the specified location, if not already there
-	if _, err := os.Stat(pidfile); err == nil {
-		return false
-	} else {
+	if _, err := os.Stat(pidfile); err != nil {
 		emptyPid := []byte("")
 		ioutil.WriteFile(pidfile, emptyPid, 0644)
-		return true
+		return nil
 	}
+	return errors.New("file already there")
 }
 
 // Reload runtime with configuration
 func (r *Runtime) Reload(c *Config) error {
-
-	// Fix for zombie processes kindly provided by https://github.com/QubitProducts/bamboo/issues/31
-	// Wait for died children to avoid zombies
-	// signalChannel := make(chan os.Signal, 2)
-	// signal.Notify(signalChannel, syscall.SIGCHLD)
-
-	// go func() {
-	// 	sig := <-signalChannel
-	// 	if sig == syscall.SIGCHLD {
-	// 		r := syscall.Rusage{}
-	// 		for {
-	// 			pid, err := syscall.Wait4(-1, nil, 0, &r)
-	// 			pidstring := strconv.Itoa(pid)
-	// 			if err != nil {
-	// 				// fmt.Println("The following pid was already dead... " + pidstring)
-	// 			} else {
-	// 				fmt.Println("Successfully waited for pid " + pidstring + " to die!")
-	// 			}
-	// 		}
-	// 	}
-	// }()
 
 	pid, err := ioutil.ReadFile(c.PidFile)
 	if err != nil {
@@ -69,7 +48,7 @@ func (r *Runtime) Reload(c *Config) error {
 	arg6 := strings.Trim(string(pid), "\n")
 	var cmd *exec.Cmd
 
-	//fmt.Println(r.Binary + " " + arg0 + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4 + " " + arg5 + " " + arg6)
+	// fmt.Println(r.Binary + " " + arg0 + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4 + " " + arg5 + " " + arg6)
 	// If this is the first run, the PID value will be empty, otherwise it will be > 0
 	if len(arg6) > 0 {
 		cmd = exec.Command(r.Binary, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
@@ -103,16 +82,16 @@ func (r *Runtime) SetWeight(backend string, server string, weight int) (string, 
 
 // Adds an ACL.
 // We need to match a frontend name to an id. This is somewhat awkard.
-func (r *Runtime) SetAcl(frontend string, acl string, pattern string) (string, error) {
+// func (r *Runtime) SetAcl(frontend string, acl string, pattern string) (string, error) {
 
-	result, err := r.cmd("add acl " + acl + pattern)
+// 	result, err := r.cmd("add acl " + acl + pattern)
 
-	if err != nil {
-		return "", err
-	} else {
-		return result, nil
-	}
-}
+// 	if err != nil {
+// 		return "", err
+// 	} else {
+// 		return result, nil
+// 	}
+// }
 
 // Gets basic info on haproxy process
 func (r *Runtime) GetInfo() (Info, error) {
