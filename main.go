@@ -22,7 +22,6 @@ var (
 	templateFilePath string
 	jsonFilePath     string
 	binaryPath       string
-	kafkaSwitch      bool
 	kafkaHost        string
 	kafkaPort        int
 	zooConString     string
@@ -40,7 +39,6 @@ func init() {
 	flag.StringVar(&templateFilePath, "lbTemplate", "configuration/templates/haproxy_config.template", "Template file to build HAproxy load balancer config")
 	flag.StringVar(&jsonFilePath, "lbJson", "/tmp/vamp_loadbalancer.json", "JSON file to store internal config.")
 	flag.StringVar(&binaryPath, "binary", helpers.HaproxyLocation(), "Path to the HAproxy binary")
-	flag.BoolVar(&kafkaSwitch, "kafkaSwitch", false, "Switch whether to enable Kafka streaming")
 	flag.StringVar(&kafkaHost, "kafkaHost", "", "The hostname or ip address of the Kafka host")
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")
 	flag.StringVar(&zooConString, "zooConString", "", "A zookeeper ensemble connection string")
@@ -59,7 +57,6 @@ func main() {
 	tools.SetValueFromEnv(&templateFilePath, "VAMP_LB_TEMPLATE_PATH")
 	tools.SetValueFromEnv(&jsonFilePath, "VAMP_LB_JSON_PATH")
 	tools.SetValueFromEnv(&binaryPath, "VAMP_LB_BINARY_PATH")
-	tools.SetValueFromEnv(&kafkaSwitch, "VAMP_LB_KAFKA_SWITCH")
 	tools.SetValueFromEnv(&kafkaHost, "VAMP_LB_KAFKA_HOST")
 	tools.SetValueFromEnv(&kafkaPort, "VAMP_LB_KAFKA_PORT")
 	tools.SetValueFromEnv(&zooConString, "VAMP_LB_ZOO_STRING")
