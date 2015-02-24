@@ -124,31 +124,35 @@ func main() {
 
 	// Initialize the stream from a runtime
 	stream.Init(&haRuntime, 3000)
-	metricsChannel := make(chan metrics.Metric)
-
-	// push the metrics output into the metrics channel
-	go stream.Out(metricsChannel)
 
 	// Setup Kafka if required
 	if len(kafkaHost) > 0 {
 
-		kafka := metrics.KafkaProducer{}
-		kafka.In(metricsChannel)
+		kafkaChannel := make(chan metrics.Metric)
+		stream.AddClient(kafkaChannel)
+
+		kafka := metrics.KafkaProducer{Log: log}
+		kafka.In(kafkaChannel)
 		kafka.Start(kafkaHost, kafkaPort)
 
 	}
+
+	sseChannel := make(chan metrics.Metric)
+	stream.AddClient(sseChannel)
 
 	// Setup SSE Stream
 	sseBroker := &metrics.SSEBroker{
 		make(map[chan metrics.Metric]bool),
 		make(chan (chan metrics.Metric)),
 		make(chan (chan metrics.Metric)),
-		metricsChannel,
+		sseChannel,
 		log,
 	}
 
-	sseBroker.In(metricsChannel)
+	sseBroker.In(sseChannel)
 	sseBroker.Start()
+
+	go stream.Start()
 
 	/*
 
