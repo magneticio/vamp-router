@@ -42,12 +42,14 @@ func (s *Streamer) Out(c chan Metric) error {
 				// loop over all wanted metrics for the current proxy
 				for _, metric := range s.wantedMetrics {
 
-					fullMetricName := proxy.Pxname + "." + strings.ToLower(proxy.Svname) + "." + strings.ToLower(metric)
+					// compile tags
+					proxies := strings.Split(proxy.Pxname, ".")
+					tags := append(proxies, []string{strings.ToLower(proxy.Svname), strings.ToLower(metric)}...)
 					field := reflect.ValueOf(proxy).FieldByName(metric).String()
 					if field != "" {
 
 						metricValue, _ := strconv.Atoi(field)
-						metric := Metric{fullMetricName, metricValue, localTime}
+						metric := Metric{tags, metricValue, localTime}
 
 						c <- metric
 
