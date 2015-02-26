@@ -28,22 +28,25 @@ var (
 	zooConKey        string
 	pidFilePath      string
 	log              *gologger.Logger
-	version          = "0.3.0"
+	version          = "0.5.0-dev"
 	stream           metrics.Streamer
+	workDir          helpers.WorkDir
+	customWorkDir    string
 )
 
 func init() {
 	flag.IntVar(&port, "port", 10001, "Port/IP to use for the REST interface. Overrides $PORT0 env variable")
-	flag.StringVar(&logPath, "logPath", "/tmp/vamp-loadbalancer.log", "Location of the log file")
-	flag.StringVar(&configFilePath, "lbConfigFile", "/tmp/haproxy_new.cfg", "Location of the target HAproxy config file")
+	flag.StringVar(&logPath, "logPath", "/logs/vamp-loadbalancer.log", "Location of the log file")
+	flag.StringVar(&configFilePath, "lbConfigFile", "/haproxy_new.cfg", "Target location of the generated HAproxy config file")
 	flag.StringVar(&templateFilePath, "lbTemplate", "configuration/templates/haproxy_config.template", "Template file to build HAproxy load balancer config")
-	flag.StringVar(&jsonFilePath, "lbJson", "/tmp/vamp_loadbalancer.json", "JSON file to store internal config.")
+	flag.StringVar(&jsonFilePath, "lbJson", "/vamp_loadbalancer.json", "JSON file to store internal config.")
 	flag.StringVar(&binaryPath, "binary", helpers.HaproxyLocation(), "Path to the HAproxy binary")
 	flag.StringVar(&kafkaHost, "kafkaHost", "", "The hostname or ip address of the Kafka host")
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")
 	flag.StringVar(&zooConString, "zooConString", "", "A zookeeper ensemble connection string")
 	flag.StringVar(&zooConKey, "zooConKey", "magneticio/vamplb", "Zookeeper root key")
-	flag.StringVar(&pidFilePath, "pidFile", "/tmp/haproxy-private.pid", "Location of the HAproxy PID file")
+	flag.StringVar(&pidFilePath, "pidFile", "/haproxy-private.pid", "Location of the HAproxy PID file")
+	flag.StringVar(&customWorkDir, "customWorkDir", "", "Custom working directory for logs, configs and sockets")
 }
 
 func main() {
@@ -62,9 +65,15 @@ func main() {
 	tools.SetValueFromEnv(&zooConString, "VAMP_LB_ZOO_STRING")
 	tools.SetValueFromEnv(&zooConKey, "VAMP_LB_ZOO_KEY")
 	tools.SetValueFromEnv(&pidFilePath, "VAMP_LB_PID_PATH")
+	tools.SetValueFromEnv(&customWorkDir, "VAMP_LB_CUSTOM_WORKDIR")
+
+	//create working dir if not already there
+	if err := workDir.Create(customWorkDir); err != nil {
+		panic(err)
+	}
 
 	// setup logging
-	log = logging.ConfigureLog(logPath)
+	log = logging.ConfigureLog(workDir.Dir() + logPath)
 	log.Info(logging.PrintLogo(version))
 
 	/*
@@ -77,9 +86,14 @@ func main() {
 	haRuntime := haproxy.Runtime{Binary: binaryPath}
 
 	// setup Configuration
-	haConfig := haproxy.Config{TemplateFile: templateFilePath, ConfigFile: configFilePath, JsonFile: jsonFilePath, PidFile: pidFilePath}
+	haConfig := haproxy.Config{TemplateFile: templateFilePath,
+		ConfigFile: workDir.Dir() + configFilePath,
+		JsonFile:   workDir.Dir() + jsonFilePath,
+		PidFile:    workDir.Dir() + pidFilePath,
+		WorkingDir: workDir.Dir(),
+	}
 
-	log.Notice("Attempting to load config at %s", configFilePath)
+	log.Notice("Attempting to load config at %s", workDir.Dir()+configFilePath)
 	// load config from disk
 	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
 	if err != nil {
@@ -99,7 +113,7 @@ func main() {
 
 	// set the Pid file
 	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
-		log.Notice("Pidfile exists at %s, proceeding...", pidFilePath)
+		log.Notice("Pidfile exists at %s, proceeding...", workDir.Dir()+pidFilePath)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
@@ -137,7 +151,7 @@ func main() {
 	sseChannel := make(chan metrics.Metric)
 	stream.AddClient(sseChannel)
 
-	// Setup SSE Stream
+	// Always setup SSE Stream
 	sseBroker := &metrics.SSEBroker{
 		make(map[chan metrics.Metric]bool),
 		make(chan (chan metrics.Metric)),

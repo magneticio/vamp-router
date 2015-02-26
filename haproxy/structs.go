@@ -89,6 +89,7 @@ type Config struct {
 	TemplateFile string        `json:"-"`
 	ConfigFile   string        `json:"-"`
 	JsonFile     string        `json:"-"`
+	WorkingDir   string        `json:"-"`
 }
 
 // Defines a single haproxy "backend".
