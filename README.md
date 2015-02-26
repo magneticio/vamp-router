@@ -10,6 +10,7 @@ REST conventions.
 Vamp-loadbalancers features are:
 
 -   Update the config through REST or through Zookeeper
+-   Set complex routes
 -   Adjust server weight
 -   Get statistics on frontends, backends and servers
 -   Stream statistics over SSE or Kafka
@@ -32,25 +33,14 @@ Start up an instance with all defaults and bind it to the local network interfac
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
                            loadbalancer
-                           version 0.1
+                           version 0.5.0-dev
                            by magnetic.io
                                           
-    19:21:01.746 main NOTI ==>  Attempting to load config at /tmp/haproxy_new.cfg
-    19:21:01.747 main NOTI ==>  Did not find a config, loading example config...
-    19:21:01.757 main NOTI ==>  Pidfile exists at /tmp/haproxy-private.pid, proceeding...
-    19:21:01.764 main NOTI ==>  Initializing metric streams...
-    19:21:01.765 main NOTI ==>  Initializing REST Api...
-    [GIN-debug] PUT   /v1/backend/:name/server/:server --> github.com/magneticio/vamp-loadbalancer/api.func·001 (5 handlers)
-    [GIN-debug] POST  /v1/frontend/:name/acl/:acl/:pattern --> github.com/magneticio/vamp-loadbalancer/api.func·002 (5 handlers)
-    [GIN-debug] GET   /v1/frontend/:name/acls   --> github.com/magneticio/vamp-loadbalancer/api.func·003 (5 handlers)
-    [GIN-debug] GET   /v1/stats                 --> github.com/magneticio/vamp-loadbalancer/api.func·004 (5 handlers)
-    [GIN-debug] GET   /v1/stats/backend         --> github.com/magneticio/vamp-loadbalancer/api.func·005 (5 handlers)
-    [GIN-debug] GET   /v1/stats/frontend        --> github.com/magneticio/vamp-loadbalancer/api.func·006 (5 handlers)
-    [GIN-debug] GET   /v1/stats/server          --> github.com/magneticio/vamp-loadbalancer/api.func·007 (5 handlers)
-    [GIN-debug] GET   /v1/stats/stream          --> github.com/magneticio/vamp-loadbalancer/api.func·008 (6 handlers)
-    [GIN-debug] GET   /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·009 (5 handlers)
-    [GIN-debug] POST  /v1/config                --> github.com/magneticio/vamp-loadbalancer/api.func·010 (5 handlers)
-    [GIN-debug] GET   /v1/info                  --> github.com/magneticio/vamp-loadbalancer/api.func·011 (5 handlers)
+    18:39:05.413 main NOTI ==>  Attempting to load config at //.vamp_lb/haproxy_new.cfg
+    18:39:05.413 main NOTI ==>  Did not find a config, loading example config...
+    18:39:05.418 main NOTI ==>  Created new pidfile...
+    18:39:05.424 main NOTI ==>  Initializing metric streams...
+    18:39:05.424 main NOTI ==>  Initializing REST API...
         
 The default ports are:
 
@@ -61,124 +51,138 @@ The default ports are:
 
 You could change the REST api port by adding the `-port` flag
 
-    $ docker run --net=host tnolet/haproxy-rest -port=1234
+    $ docker run --net=host magneticio/vamp-loadbalancer:latest -port=1234
 
-Or by exporting an environment variable `PORT0`. When deploying with Marathon 0.7.0, this is done automatically
+Or by exporting an environment variable `VAMP_LB_PORT`.
      
-     $ export PORT0=12345
-     $ docker run --net=host tnolet/haproxy-rest
+     $ export VAMP_LB_PORT=12345
+     $ docker run --net=host magneticio/vamp-loadbalancer:latest
 
-## Getting statistics
 
-Statistics are published in two different ways: straight from the REST interface and as Kafka topics
-
-### Stats via REST
-     
-Grab some stats from the `/stats` endpoint. Notice the IP address. This is [boot2docker](https://github.com/boot2docker/boot2docker)'s address on my Macbook. I'm using [httpie](https://github.com/jakubroztocil/httpie) instead of curl.
-
-    $ http http://192.168.59.103:10001/v1/stats
-    HTTP/1.1 200 OK
     
-    [
-        {
-            "act": "", 
-            "bck": "", 
-            "bin": "3572", 
-            "bout": "145426", 
-            "check_code": "", 
-            "check_duration": "", 
-            "check_status": "", 
-            "chkdown": "", 
-            "chkfail": "", 
-            "cli_abrt": "", 
-            ...
-            
-Valid endpoints are `stats/frontend`, `stats/backend` and `stats/server`. The `/stats` endpoint gives you all of them
-in one go.
+## Routes
 
-### Stats via Kafka
+A Route is structured set of Haproxy frontends, backends and servers. The Route provides a convenient
+and higher level way of creating and managing this structure. You could create this structure by
+hand with separate API calls, but this is faster and easier in 9 out of 10 cases.
 
-Statistics are also published as Kafka topics. Configure a Kafka endpoint using the `-kakfaHost` and `-kafkaPort` flags.
-Stats are published as the following topic:
+The structure of a route is as follows:
 
-- loadbalancer.all
+                              -> [srv a] -> sock -> [fe a: be a] -> [*srv] -> host:port
+                            /
+    ->[fe (fltr)(qts) : be]-
+                            \
+                              -> [srv b] -> sock -> [fe b: be b] -> [*srv] -> host:port
 
-The messages on that topic are json strings, where the "name" key indicates what metric type from which proxy
- you are dealing with, i.e.:
+    fe = frontend
+    be = backend
+    srv = server
+    fltr = filter
+    qts = quotas
 
+The above example has two groups, *A* and *B*, but a route can have many groups. The start of the
+route (the first frontend) has filters and quotas that influence the way traffic flows in a route,
+i.e. to which groups the traffic goes. All items in a route map to actual Haproxy types from the `vamp-loadbalancer/haproxy` Go package.
+
+### Routes actions
+
+Routes live under the `/routes` endpoint which provides the following actions:
+
+    GET     /routes  
+    POST    /routes  
+
+    GET     /routes/:route  
+    PUT     /routes/:route  
+    DELETE  /routes/:route  
+
+    GET     /routes/:route/groups  
+    POST    /routes/:route/groups  
+    GET     /routes/:route/groups/:group  
+    PUT     /routes/:route/groups/:group  
+    DELETE  /routes/:route/groups/:group  
+
+    GET     /routes/:route/groups/:group/servers  
+    GET     /routes/:route/groups/:group/servers/:server  
+    PUT     /routes/:route/groups/:group/servers/:server  
+    POST    /routes/:route/groups/:group/servers  
+    DELETE  /routes/:route/groups/:group/servers/:server 
+
+
+For example, create a route by posting this json object to `routes`. All necessary backends, frontends, servers and sockets will be created "under water". Read the comments for specific details
+
+    $ http POST localhost:10001/v1/routes
+    
     {
-     "name": "testbe.test_be_1.rate",   # The rate for server test_be_1 for proxy testbe
-     "value": "2",                      # The value of the metric
-     "timestamp": 1413546338            # The timestamp in Unix epoch
-    }
-    {
-     "name": "testbe.test_be_1.rate_lim",
-     "value": "12",
-     "timestamp": 1413546338
-    }
-    { "name": "testbe.test_be_1.rate_max",
-     "value": "30",
-     "timestamp": 1413546338
-    }
-
-__Note:__ currently, not all Haproxy metric types are sent to Kafka. At this moment, the list is hardcoded as a `wantedMetrics` slice:
-    
-    wantedMetrics  := []string{ "Scur", "Qcur","Smax","Slim","Weight","Qtime","Ctime","Rtime","Ttime","Req_rate","Req_rate_max","Req_tot","Rate","Rate_lim","Rate_max" }
-
-For an explanation of the metric types, please read [this](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9.1)            
-### Updating the configuration via REST
-
-Post a configuration. You can use the example file `resources/config_example.json`
-
-    $ http POST http://192.168.59.103:10001/v1/config < resources/config_example.json 
-    HTTP/1.1 200 OK
-     
-    Ok
-    
-Update the weight of some backend server
-
-    $ http PUT http://192.168.59.103:10001/v1/backend/testbe/servers/test_be_1 
-
+      "name": "test_route_2",                               # a unique name
+      "port": 9026,                                         # the port to bind to
+      "protocol": "http",
+      "filters": [                                          # some filter with a destination group
         {
-            "weight" : 10
+          "name": "uses_internet_explorer",
+          "condition": "hdr_sub(user-agent) MSIE",
+          "destination": "group_b"
         }
+      ],
+      "httpQuota": {
+        "sampleWindow": "1s",
+        "rate": 10000,
+        "expiryTime": "10s"
+      },
+      "tcpQuota": {
+        "sampleWindow": "3s",
+        "rate": 10000,
+        "expiryTime": "10s"
+      },
+      "groups": [                                           # one or multiple groups
+        {
+          "name": "group_a",                                # a unique name within this set of groups
+          "weight": 30,                                     # weight of the group
+          "servers": [
+            {
+              "name": "paas.55f73f0d-6087-4964-a70e",       # some name for your server. Should be unique
+              "host": "192.168.2.2",                        # the endpoint for your application
+              "port": 8081
+            }
+          ]
+        },
+        {
+          "name": "group_b",
+          "weight": 70,
+          "servers": [
+            {
+              "name": "paas.fb76ea52-098f-4e2a-abbe",
+              "host": "192.168.2.2",
+              "port": 8082
+            }
+          ]
+        }
+      ]
+    } 
 
-    HTTP/1.1 200 OK
-    
-### Running as local proxy + Zookeeper
 
-At [magnetic.io](http://magnetic.io), we use Haproxy-rest running in local proxy mode for simple service discovery.
-When you start HAproxy-rest with `-mode=localproxy`, only very simple binds are set up between two host:port pairs.
-No frontends, no backends, no ACL's, no nothing.  
+Updating the weight of the groups can be done by using a `PUT` request to the `groups` resource of a route:
 
-__Note:__ local proxy mode requires a Zookeeper ensemble to function: local proxy only gets its config from a Zookeeper
-node.  
+    $ http PUT http://localhost:10001/v1/routes/test_route_2/groups/group_a
 
-Haproxy-rest will watch for changes to the key: `/magnetic/localproxy`. You can set your own namespace using the `-zooConKey` flag.  The `/localproxy` part is hardcoded.
-To this node you need to publish a full configuration in JSON format. Starting up a localproxy using Zookeeper
-looks like this:  
-
-    -mode=localproxy -zooConString=10.161.63.88:2181,10.189.106.106:2181,10.5.99.23:2181
-    
-This will result in config similar to the following JSON. Notice the `frontends` and `backends` are empty.
-There is just a simple array of services that bind a port to an endpoint.
 
     {
-        frontends: [ ],
-        backends: [ ],
-        services: [
-            {
-                name: "vrn-development-service-4d7a24cd",
-                bindPort: 22500,
-                endPoint: "10.224.236.38",
-                mode: "tcp"
-            }
-        ]
+      "name": "group_a",                                
+      "weight": 40,                                     # a new weight
+      "servers": [
+        {
+          "name": "paas.55f73f0d-6087-4964-a70e",       
+          "host": "192.168.2.2",                        
+          "port": 8081
+        }
+      ]
     }
-    
-## Setting Frontends
+
+
+## Frontends
 
 The frontend is the basic listening port or unix socket. Here's an example of a basic HTTP frontend:
+
+    http GET localhost:10001/v1/frontends
 
     {
         "name" : "test_fe_1",
@@ -308,30 +312,121 @@ And with proxy mode set to true:
             ]
     }
 
+### Updating the full configuration via REST
+
+Post a configuration. You can use the example file `resources/config_example.json`
+
+    $ http POST http://192.168.59.103:10001/v1/config < resources/config_example.json 
+    HTTP/1.1 200 OK
+     
+### Updating the full configuration using Zookeeper
+
+When you provide vamp-loadbakancer with a valid Zookeeper connection string using the `-zooConString` flag, vamp-loadbalancer will watch for changes to the key: `/magnetic/vamplb`. You can set your own namespace using the `-zooConKey` flag. To this node you need to publish a full configuration in JSON format. Starting up a localproxy using Zookeeper
+looks like this:  
+
+    -zooConString=10.161.63.88:2181,10.189.106.106:2181,10.5.99.23:2181    
+
+## Getting statistics
+
+Statistics are published in three different ways: straight from the REST interface, or as stream using SSE or Kafka topics.
+
+### Stats via REST
+     
+Grab some stats from the `/stats` endpoint. Notice the IP address. This is [boot2docker](https://github.com/boot2docker/boot2docker)'s address on my Macbook. I'm using [httpie](https://github.com/jakubroztocil/httpie) instead of curl.
+
+    $ http http://192.168.59.103:10001/v1/stats
+    HTTP/1.1 200 OK
+    
+    [
+        {
+            "act": "", 
+            "bck": "", 
+            "bin": "3572", 
+            "bout": "145426", 
+            "check_code": "", 
+            "check_duration": "", 
+            "check_status": "", 
+            "chkdown": "", 
+            "chkfail": "", 
+            "cli_abrt": "", 
+            ...
+            
+Valid endpoints are `stats/frontends`, `stats/backends` and `stats/servers`. The `/stats` endpoint gives you all of them
+in one go.
+
+### Stats streaming via SSE
+
+All statistics are also streamed as Server Sent Events (SSE). Just do a GET on `/stats/stream` and the server will respond
+with a continuous stream of all stats, using the following format:
+
+    event: metric
+    data: {"tags":["test_fe_1","frontend","rate"],"value":0,"timestamp":"2015-02-24T18:45:07Z"}
+
+    event: metric
+    data: {"tags":["test_fe_1","frontend","rate_lim"],"value":0,"timestamp":"2015-02-24T18:45:07Z"}
+
+    event: metric
+    data: {"tags":["test_fe_1","frontend","rate_max"],"value":0,"timestamp":"2015-02-24T18:45:07Z"}
+
+
+### Stats streaming via Kafka
+
+Statistics are also published as Kafka topics. Configure a Kafka endpoint using the `-kakfaHost` and `-kafkaPort` flags.
+Stats are published as the following topic:
+
+- loadbalancer.all
+
+The messages on that topic are json strings:
+
+    {
+        "tags": [
+            "test_fe_1",
+            "frontend",
+            "rate"
+        ],
+        "value": 0,
+        "timestamp": "2015-02-24T18:45:07Z"
+    },
+    {
+        "tags": [
+            "test_fe_1",
+            "frontend",
+            "rate_lim"
+        ],
+        "value": 0,
+        "timestamp": "2015-02-24T18:45:07Z"
+    },
+    {
+        "tags": [
+            "test_fe_1",
+            "frontend",
+            "rate_max"
+        ],
+        "value": 0,
+        "timestamp": "2015-02-24T18:45:07Z"
+    }
+
+__Note:__ currently, not all Haproxy metric types are sent to Kafka. At this moment, the list is hardcoded as a `wantedMetrics` slice:
+    
+    wantedMetrics  := []string{ "Scur", "Qcur","Smax","Slim","Weight","Qtime","Ctime","Rtime","Ttime","Req_rate","Req_rate_max","Req_tot","Rate","Rate_lim","Rate_max" }
+
+For an explanation of the metric types, please read [this](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9.1)            
 
  
 ### Startup Flags & Options
 
-    -binary="/usr/local/bin/haproxy"                           Path to the HAproxy binary
-    -kafkaHost="localhost"                                     The hostname or ip address of the Kafka host
-    -kafkaPort=9092                                            The port of the Kafka host
-    -kafkaSwitch="off"                                         Switch whether to enable Kafka streaming
-    -lbConfigFile="resources/haproxy_new.cfg"                  Location of the target HAproxy config file
-    -lbTemplate="resources/haproxy_cfg.template"               Template file to build HAproxy load balancer config
-    -mode="loadbalancer"                                       Switch for "loadbalancer" or "localproxy" mode
-    -pidFile="resources/haproxy-private.pid"                   Location of the HAproxy PID file
-    -port=10001                                                Port/IP to use for the REST interface. Overrides $PORT0 env variable
-    -proxyConfigFile="resources/haproxy_localproxy_new.cfg"    Location of the target HAproxy localproxy config
-    -proxyTemplate="resources/haproxy_localproxy_cfg.template" Template file to build HAproxy local proxy config
-    -zooConKey="magnetic"                                      Zookeeper root key
-    -zooConString="localhost"                                  A zookeeper ensemble connection string
-    
-for example, this would start up haproxy-rest on port 12345
-
-    $ ./haproxy-rest -port=12345  
-and this would start up haproxy-rest with kafka streaming enabled
-
-    $ ./haproxy-rest -mode=loadbalancer -kafkaSwitch=on -kafkaHost=10.161.63.88
+      -binary="/usr/local/sbin/haproxy":                Path to the HAproxy binary
+      -customWorkDir="":                                Custom working directory for logs, configs and sockets
+      -kafkaHost="":                                    The hostname or ip address of the Kafka host
+      -kafkaPort=9092:                                  The port of the Kafka host
+      -lbConfigFile="/haproxy_new.cfg":                 Target location of the generated HAproxy config file
+      -lbJson="/vamp_loadbalancer.json":                JSON file to store internal config.
+      -lbTemplate="configuration/templates/haproxy_config.template": Template file to build HAproxy load balancer config
+      -logPath="/logs/vamp-loadbalancer.log":           Location of the log file
+      -pidFile="/haproxy-private.pid":                  Location of the HAproxy PID file
+      -port=10001:                                      Port/IP to use for the REST interface.
+      -zooConKey="magneticio/vamplb":                   Zookeeper root key
+      -zooConString="":                                 A zookeeper ensemble connection string
     
 ### Installing: the harder custom build way
 
@@ -345,31 +440,18 @@ Install HAproxy 1.5 or greater in whatever way you like. Just make sure the `hap
 
 Clone this repo 
 
-    git clone https://github.com/tnolet/haproxy-rest 
+    git clone https://github.com/magneticio/vamp-loadbalancer 
 
-CD into the directory just created and startup haproxy
-
-OSX:
-
-    $ cd haproxy-rest
-    $ haproxy -f resources/haproxy_init.cfg -p resources/haproxy-private.pid -st $(<resources/haproxy-private.pid)
-
-Ubuntu
-
-    $ cd haproxy-rest      
-    $ haproxy -f resources/haproxy_init.cfg -p resources/haproxy-private.pid -sf $(cat resources/haproxy-private.pid)
-
-    
-Build the program and run it. 
+CD into the directory just and build the program and run it. 
  
-    $ go build
-    $ ./haproxy-rest
+    $ go install
+    $ vamp-loadbalancer
 
 If you're on Mac OSX or Windows and want to compile for Linux (which is probably the OS 
 you're using to run HAproxy), you need to cross compile. 
 For this, go to your Go `src` directory, i.e.
 
-    $ cd /usr/local/Cellar/go/1.3.1
+    $ cd /usr/local/Cellar/go/1.4.1
 
 Compile the compiler with the correct arguments for OS and ARC
 
