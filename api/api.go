@@ -74,7 +74,14 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.DELETE("/routes/:route", DeleteRoute)
 
 		v1.GET("/routes/:route/groups", GetRouteGroups)
+
+		// You can post one, or multiple groups in one go.
 		v1.POST("/routes/:route/groups", PostRouteGroup)
+
+		// This endpoint allows you to update all groups in a route in one go.
+		// Any groups in the JSON object not already part of the route, i.e. they are new and thus cannot
+		// be updated, are silently discarded.
+		v1.PUT("/routes/:route/groups", PutRouteGroups)
 		v1.GET("/routes/:route/groups/:group", GetRouteGroup)
 		v1.PUT("/routes/:route/groups/:group", PutRouteGroup)
 		v1.DELETE("/routes/:route/groups/:group", DeleteRouteGroup)

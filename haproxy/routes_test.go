@@ -94,22 +94,22 @@ func TestConfiguration_GetRouteGroup(t *testing.T) {
 
 }
 
-func TestConfiguration_AddRouteGroup(t *testing.T) {
+func TestConfiguration_AddRouteGroups(t *testing.T) {
 	j, _ := ioutil.ReadFile(GROUP_JSON)
-	var group *Group
-	_ = json.Unmarshal(j, &group)
+	var groups []*Group
+	_ = json.Unmarshal(j, &groups)
 
 	route := "test_route_1"
 
-	if haConfig.AddRouteGroup(route, group) != nil {
+	if haConfig.AddRouteGroups(route, groups) != nil {
 		t.Errorf("Failed to add route")
 	}
 
-	if haConfig.AddRouteGroup(route, group) == nil {
+	if haConfig.AddRouteGroups(route, groups) == nil {
 		t.Errorf("Adding should fail when a group already exists")
 	}
 
-	if haConfig.AddRouteGroup("non_existent_group", group) == nil {
+	if haConfig.AddRouteGroups("non_existent_group", groups) == nil {
 		t.Errorf("Should return nil on non existent route")
 	}
 
@@ -117,12 +117,13 @@ func TestConfiguration_AddRouteGroup(t *testing.T) {
 
 func TestConfiguration_UpdateRouteGroup(t *testing.T) {
 	j, _ := ioutil.ReadFile(GROUP_JSON)
-	var group *Group
-	_ = json.Unmarshal(j, &group)
+	var groups []*Group
+	_ = json.Unmarshal(j, &groups)
 
+	group := groups[0]
 	group.Weight = 1
 
-	if err := haConfig.UpdateRouteGroup("test_route_1", group.Name, group); err != nil {
+	if err := haConfig.UpdateRouteGroup("test_route_1", groups[0].Name, group); err != nil {
 		t.Errorf(err.Error())
 	}
 

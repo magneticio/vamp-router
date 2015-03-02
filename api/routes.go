@@ -136,19 +136,38 @@ func PutRouteGroup(c *gin.Context) {
 	}
 }
 
+func PutRouteGroups(c *gin.Context) {
+
+	Config(c).BeginWriteTrans()
+	defer Config(c).EndWriteTrans()
+
+	var groups []haproxy.Group
+	routeName := c.Params.ByName("route")
+
+	if c.Bind(&groups) {
+		if err := Config(c).UpdateRouteGroups(routeName, &groups); err != nil {
+			HandleError(c, err)
+		} else {
+			HandleReload(c, Config(c), 200, "updated groups")
+		}
+	} else {
+		c.String(500, "Invalid JSON")
+	}
+}
+
 func PostRouteGroup(c *gin.Context) {
 
 	Config(c).BeginWriteTrans()
 	defer Config(c).EndWriteTrans()
 
-	var group haproxy.Group
+	var groups []*haproxy.Group
 	routeName := c.Params.ByName("route")
 
-	if c.Bind(&group) {
-		if err := Config(c).AddRouteGroup(routeName, &group); err != nil {
+	if c.Bind(&groups) {
+		if err := Config(c).AddRouteGroups(routeName, groups); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created group")
+			HandleReload(c, Config(c), 201, "created group(s)")
 		}
 	} else {
 		c.String(500, "Invalid JSON")

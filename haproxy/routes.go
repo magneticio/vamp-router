@@ -154,36 +154,42 @@ func (c *Config) GetRouteGroup(routeName string, groupName string) (*Group, *Err
 	return group, &Error{404, errors.New("no  group found")}
 }
 
-func (c *Config) AddRouteGroup(routeName string, group *Group) *Error {
+func (c *Config) AddRouteGroups(routeName string, groups []*Group) *Error {
 
-	if c.GroupExists(routeName, group.Name) {
-		return &Error{409, errors.New("group already exists")}
+	for _, group := range groups {
+		if c.GroupExists(routeName, group.Name) {
+			msg := "this group already exists: " + group.Name
+			return &Error{409, errors.New(msg)}
+		}
 	}
 
 	for _, route := range c.Routes {
 		if route.Name == routeName {
 
-			socketServer := c.socketServerFactory(ServerName(routeName, group.Name), group.Weight)
-			backend := c.backendFactory(BackendName(route.Name, group.Name), route.Protocol, false, []*ServerDetail{})
-			frontend := c.socketFrontendFactory(FrontendName(route.Name, group.Name), route.Protocol, socketServer.UnixSock, backend)
+			for _, group := range groups {
+				socketServer := c.socketServerFactory(ServerName(routeName, group.Name), group.Weight)
+				backend := c.backendFactory(BackendName(route.Name, group.Name), route.Protocol, false, []*ServerDetail{})
+				frontend := c.socketFrontendFactory(FrontendName(route.Name, group.Name), route.Protocol, socketServer.UnixSock, backend)
 
-			for _, server := range group.Servers {
-				srv := c.serverFactory(server.Name, group.Weight, server.Host, server.Port)
-				backend.Servers = append(backend.Servers, srv)
+				for _, server := range group.Servers {
+					srv := c.serverFactory(server.Name, group.Weight, server.Host, server.Port)
+					backend.Servers = append(backend.Servers, srv)
+				}
+
+				if err := c.AddBackend(backend); err != nil {
+					return &Error{500, errors.New("something went wrong adding backend: " + backend.Name)}
+				}
+
+				if err := c.AddFrontend(frontend); err != nil {
+					return &Error{500, errors.New("something went wrong adding frontend: " + frontend.Name)}
+				}
+
+				route.Groups = append(route.Groups, group)
 			}
-
-			if err := c.AddBackend(backend); err != nil {
-				return &Error{500, errors.New("something went wrong adding backend: " + backend.Name)}
-			}
-
-			if err := c.AddFrontend(frontend); err != nil {
-				return &Error{500, errors.New("something went wrong adding frontend: " + frontend.Name)}
-			}
-
-			route.Groups = append(route.Groups, group)
 			return nil
 		}
 	}
+
 	return &Error{404, errors.New("no  route found")}
 }
 
@@ -220,9 +226,24 @@ func (c *Config) UpdateRouteGroup(routeName string, groupName string, group *Gro
 		return err
 	}
 
-	if err := c.AddRouteGroup(routeName, group); err != nil {
+	groups := []*Group{group}
+
+	if err := c.AddRouteGroups(routeName, groups); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Updating
+func (c *Config) UpdateRouteGroups(routeName string, groups *[]Group) *Error {
+
+	// if err := c.DeleteRouteGroup(routeName, groupName); err != nil {
+	// 	return err
+	// }
+
+	// if err := c.AddRouteGroup(routeName, group); err != nil {
+	// 	return err
+	// }
 	return nil
 }
 

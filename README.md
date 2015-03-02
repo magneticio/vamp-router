@@ -1,8 +1,7 @@
 # Vamp-loadbalancer
 ---
 
-Vamp-loadbalancer is a total refactor from [HAproxy-rest](https://github.com/tnolet/haproxy-rest). It is inspired
-by [bambooo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed.
+Vamp-loadbalancer is inspired by [bamboo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed. 
 
 *Note to HAproxy-rest users:* There are some breaking API changes. Most for the better, sticking more closely to
 REST conventions.
