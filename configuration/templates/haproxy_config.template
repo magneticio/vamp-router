@@ -149,7 +149,7 @@ backend {{.Name}}
 
    {{end}}
 
-   {{ if eq .Mode "http" }} cookie vamp_srv insert httponly maxidle 5m maxlife 1h {{end}}
+   {{ if eq .Mode "http" }} cookie vamp_srv insert indirect nocache httponly maxidle 5m maxlife 1h {{end}}
     {{$mode := .Mode}}{{range .Servers}}
         server {{.Name}} {{.Host}}:{{.Port}} {{if eq $mode "http" }} cookie {{.Name}} {{end}} weight {{.Weight}} maxconn {{.MaxConn}} {{if .Check}}check inter {{.CheckInterval}}{{end}} {{end}}
     {{if .Options.AbortOnClose}} option abortonclose{{end}}
