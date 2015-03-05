@@ -28,7 +28,7 @@ var (
 	zooConKey        string
 	pidFilePath      string
 	log              *gologger.Logger
-	version          = "0.5.0-dev"
+	version          = "0.5.0"
 	stream           metrics.Streamer
 	workDir          helpers.WorkDir
 	customWorkDir    string

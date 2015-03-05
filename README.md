@@ -32,7 +32,7 @@ Start up an instance with all defaults and bind it to the local network interfac
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
                            loadbalancer
-                           version 0.5.0-dev
+                           version 0.5.0
                            by magnetic.io
                                           
     18:39:05.413 main NOTI ==>  Attempting to load config at //.vamp_lb/haproxy_new.cfg
