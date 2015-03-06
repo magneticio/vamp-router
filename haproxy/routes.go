@@ -144,9 +144,9 @@ func (c *Config) GetRouteService(routeName string, serviceName string) (*Service
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for _, grp := range rt.Services {
-				if grp.Name == serviceName {
-					return grp, nil
+			for _, srv := range rt.Services {
+				if srv.Name == serviceName {
+					return srv, nil
 				}
 			}
 		}
@@ -197,8 +197,8 @@ func (c *Config) DeleteRouteService(routeName string, serviceName string) *Error
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for j, grp := range rt.Services {
-				if grp.Name == serviceName {
+			for j, srv := range rt.Services {
+				if srv.Name == serviceName {
 
 					// order is important here. Always delete frontends first because they hold references to
 					// backends. Deleting a backend that is still referenced first will fail.
@@ -216,7 +216,7 @@ func (c *Config) DeleteRouteService(routeName string, serviceName string) *Error
 			}
 		}
 	}
-	return &Error{404, errors.New("no  route found")}
+	return &Error{404, errors.New("")}
 }
 
 // just a convenience functions for a delete and a create
@@ -234,16 +234,18 @@ func (c *Config) UpdateRouteService(routeName string, serviceName string, servic
 	return nil
 }
 
-// Updating
-func (c *Config) UpdateRouteServices(routeName string, services *[]Service) *Error {
+func (c *Config) UpdateRouteServices(routeName string, services []*Service) *Error {
 
-	// if err := c.DeleteRouteService(routeName, serviceName); err != nil {
-	// 	return err
-	// }
+	for _, srv := range services {
+		if err := c.DeleteRouteService(routeName, srv.Name); err != nil {
+			return err
+		}
+	}
 
-	// if err := c.AddRouteService(routeName, service); err != nil {
-	// 	return err
-	// }
+	if err := c.AddRouteServices(routeName, services); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -253,9 +255,9 @@ func (c *Config) GetServiceServers(routeName string, serviceName string) ([]*Ser
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for _, grp := range rt.Services {
-				if grp.Name == serviceName {
-					return grp.Servers, nil
+			for _, srv := range rt.Services {
+				if srv.Name == serviceName {
+					return srv.Servers, nil
 				}
 			}
 		}
@@ -269,9 +271,9 @@ func (c *Config) GetServiceServer(routeName string, serviceName string, serverNa
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for _, grp := range rt.Services {
-				if grp.Name == serviceName {
-					for _, srv := range grp.Servers {
+			for _, svc := range rt.Services {
+				if svc.Name == serviceName {
+					for _, srv := range svc.Servers {
 						if srv.Name == serverName {
 							return srv, nil
 						}

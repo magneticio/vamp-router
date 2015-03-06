@@ -12,9 +12,10 @@ const (
 	// EXAMPLE       = "../test/test_config1.json"
 	// JSON_FILE     = "/tmp/vamp_lb_test.json"
 	// PID_FILE      = "/tmp/vamp_lb_test.pid"
-	ROUTE_JSON  = "../test/test_route.json"
-	GROUP_JSON  = "../test/test_service.json"
-	SERVER_JSON = "../test/test_server1.json"
+	ROUTE_JSON    = "../test/test_route.json"
+	SERVICE_JSON  = "../test/test_service.json"
+	SERVICES_JSON = "../test/test_multiple_services.json"
+	SERVER_JSON   = "../test/test_server1.json"
 )
 
 func TestConfiguration_GetRoutes(t *testing.T) {
@@ -95,7 +96,7 @@ func TestConfiguration_GetRouteService(t *testing.T) {
 }
 
 func TestConfiguration_AddRouteServices(t *testing.T) {
-	j, _ := ioutil.ReadFile(GROUP_JSON)
+	j, _ := ioutil.ReadFile(SERVICE_JSON)
 	var services []*Service
 	_ = json.Unmarshal(j, &services)
 
@@ -116,7 +117,7 @@ func TestConfiguration_AddRouteServices(t *testing.T) {
 }
 
 func TestConfiguration_UpdateRouteService(t *testing.T) {
-	j, _ := ioutil.ReadFile(GROUP_JSON)
+	j, _ := ioutil.ReadFile(SERVICE_JSON)
 	var services []*Service
 	_ = json.Unmarshal(j, &services)
 
@@ -124,6 +125,17 @@ func TestConfiguration_UpdateRouteService(t *testing.T) {
 	service.Weight = 1
 
 	if err := haConfig.UpdateRouteService("test_route_1", services[0].Name, service); err != nil {
+		t.Errorf(err.Error())
+	}
+
+}
+
+func TestConfiguration_UpdateRouteServices(t *testing.T) {
+	j, _ := ioutil.ReadFile(SERVICES_JSON)
+	var services []*Service
+	_ = json.Unmarshal(j, &services)
+
+	if err := haConfig.UpdateRouteServices("test_route_2", services); err != nil {
 		t.Errorf(err.Error())
 	}
 
@@ -182,7 +194,7 @@ func TestConfiguration_AddServiceServer(t *testing.T) {
 	route := "test_route_1"
 	service := "service_a"
 
-	j, _ := ioutil.ReadFile(GROUP_JSON)
+	j, _ := ioutil.ReadFile(SERVICE_JSON)
 	var server Server
 
 	_ = json.Unmarshal(j, &server)
@@ -203,12 +215,10 @@ func TestConfiguration_AddServiceServer(t *testing.T) {
 		t.Errorf("Should return error on non existent route")
 	}
 
-	// test should be activated when "exists" checking is in the haproxy package
-	// server.Name = "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd"
-	// err = haConfig.AddServiceServer(route,service,&server)
-	// if err == nil {
-	// 	t.Errorf("Should return error on trying to create an already existing server")
-	// }
+	server.Name = "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd"
+	if err := haConfig.AddServiceServer(route, service, &server); err == nil {
+		t.Errorf("Should return error on trying to create an already existing server")
+	}
 
 }
 

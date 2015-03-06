@@ -141,11 +141,11 @@ func PutRouteServices(c *gin.Context) {
 	Config(c).BeginWriteTrans()
 	defer Config(c).EndWriteTrans()
 
-	var services []haproxy.Service
+	var services []*haproxy.Service
 	routeName := c.Params.ByName("route")
 
 	if c.Bind(&services) {
-		if err := Config(c).UpdateRouteServices(routeName, &services); err != nil {
+		if err := Config(c).UpdateRouteServices(routeName, services); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), 200, "updated services")
