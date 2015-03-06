@@ -157,7 +157,7 @@
             }
         },
         {
-            "name" : "test_route_1.group_a",
+            "name" : "test_route_1.service_a",
             "mode" : "http",
             "servers" : [
                 {
@@ -184,7 +184,7 @@
         {
           "name": "uses_internet_explorer",
           "condition": "hdr_sub(user-agent) MSIE",
-          "destination": "group_b"
+          "destination": "service_b"
         }
       ],
       "httpQuota": {
@@ -197,9 +197,9 @@
         "rate": 10000,
         "expiryTime": "10s"
       },
-      "groups": [
+      "services": [
         {
-          "name": "group_a",
+          "name": "service_a",
           "weight": 45,
           "servers": [
             {
@@ -210,7 +210,7 @@
           ]
         },
         {
-          "name": "group_b",
+          "name": "service_b",
           "weight": 55,
           "servers": [
             {

@@ -252,9 +252,9 @@ func TestConfiguration_DeleteServer(t *testing.T) {
 
 // Namers
 
-func TestConfiguration_GroupName(t *testing.T) {
-	if GroupName("a", "b") == "a.b." {
-		t.Errorf("Group name not well formed")
+func TestConfiguration_ServiceName(t *testing.T) {
+	if ServiceName("a", "b") == "a.b." {
+		t.Errorf("Service name not well formed")
 	}
 }
 

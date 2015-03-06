@@ -353,13 +353,13 @@ func (c *Config) RouteExists(name string) bool {
 	return false
 }
 
-// helper function to check if a Group exists
-func (c *Config) GroupExists(routeName string, groupName string) bool {
+// helper function to check if a Service exists
+func (c *Config) ServiceExists(routeName string, serviceName string) bool {
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for _, grp := range rt.Groups {
-				if grp.Name == groupName {
+			for _, grp := range rt.Services {
+				if grp.Name == serviceName {
 					return true
 				}
 			}
@@ -368,13 +368,13 @@ func (c *Config) GroupExists(routeName string, groupName string) bool {
 	return false
 }
 
-// helper function to check if a Server exists in a specific Group
-func (c *Config) ServerExists(routeName string, groupName string, serverName string) bool {
+// helper function to check if a Server exists in a specific Service
+func (c *Config) ServerExists(routeName string, serviceName string, serverName string) bool {
 
 	for _, rt := range c.Routes {
 		if rt.Name == routeName {
-			for _, grp := range rt.Groups {
-				if grp.Name == groupName {
+			for _, grp := range rt.Services {
+				if grp.Name == serviceName {
 					for _, server := range grp.Servers {
 						if server.Name == serverName {
 							return true
@@ -387,22 +387,22 @@ func (c *Config) ServerExists(routeName string, groupName string, serverName str
 	return false
 }
 
-// helper function to create a Backend or Frontend name based on a Route and Group
-func GroupName(routeName string, groupName string) string {
-	return routeName + "." + groupName
+// helper function to create a Backend or Frontend name based on a Route and Service
+func ServiceName(routeName string, serviceName string) string {
+	return routeName + "." + serviceName
 }
-func RouteName(routeName string, groupName string) string {
-	return routeName + "." + groupName
-}
-
-func BackendName(routeName string, groupName string) string {
-	return routeName + "." + groupName
+func RouteName(routeName string, serviceName string) string {
+	return routeName + "." + serviceName
 }
 
-func FrontendName(routeName string, groupName string) string {
-	return routeName + "." + groupName
+func BackendName(routeName string, serviceName string) string {
+	return routeName + "." + serviceName
 }
 
-func ServerName(routeName string, groupName string) string {
-	return routeName + "." + groupName
+func FrontendName(routeName string, serviceName string) string {
+	return routeName + "." + serviceName
+}
+
+func ServerName(routeName string, serviceName string) string {
+	return routeName + "." + serviceName
 }

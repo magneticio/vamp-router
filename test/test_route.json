@@ -6,7 +6,7 @@
         {
           "name": "uses_internet_explorer",
           "condition": "hdr_sub(user-agent) MSIE",
-          "destination": "group_b"
+          "destination": "service_b"
         }
       ],
       "httpQuota": {
@@ -19,9 +19,9 @@
         "rate": 10000,
         "expiryTime": "10s"
       },
-      "groups": [
+      "services": [
         {
-          "name": "group_a",
+          "name": "service_a",
           "weight": 21,
           "servers": [
             {
@@ -32,7 +32,7 @@
           ]
         },
         {
-          "name": "group_b",
+          "name": "service_b",
           "weight": 32,
           "servers": [
             {
@@ -43,7 +43,7 @@
           ]
         },
         {
-          "name": "group_to_be_updated",
+          "name": "service_to_be_updated",
           "weight": 32,
           "servers": [
             {

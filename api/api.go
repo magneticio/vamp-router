@@ -73,24 +73,24 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 		v1.PUT("/routes/:route", PutRoute)
 		v1.DELETE("/routes/:route", DeleteRoute)
 
-		v1.GET("/routes/:route/groups", GetRouteGroups)
+		v1.GET("/routes/:route/services", GetRouteServices)
 
-		// You can post one, or multiple groups in one go.
-		v1.POST("/routes/:route/groups", PostRouteGroup)
+		// You can post one, or multiple services in one go.
+		v1.POST("/routes/:route/services", PostRouteService)
 
-		// This endpoint allows you to update all groups in a route in one go.
-		// Any groups in the JSON object not already part of the route, i.e. they are new and thus cannot
+		// This endpoint allows you to update all services in a route in one go.
+		// Any services in the JSON object not already part of the route, i.e. they are new and thus cannot
 		// be updated, are silently discarded.
-		v1.PUT("/routes/:route/groups", PutRouteGroups)
-		v1.GET("/routes/:route/groups/:group", GetRouteGroup)
-		v1.PUT("/routes/:route/groups/:group", PutRouteGroup)
-		v1.DELETE("/routes/:route/groups/:group", DeleteRouteGroup)
+		v1.PUT("/routes/:route/services", PutRouteServices)
+		v1.GET("/routes/:route/services/:service", GetRouteService)
+		v1.PUT("/routes/:route/services/:service", PutRouteService)
+		v1.DELETE("/routes/:route/services/:service", DeleteRouteService)
 
-		v1.GET("/routes/:route/groups/:group/servers", GetGroupServers)
-		v1.GET("/routes/:route/groups/:group/servers/:server", GetGroupServer)
-		v1.PUT("/routes/:route/groups/:group/servers/:server", PutGroupServer)
-		v1.POST("/routes/:route/groups/:group/servers", PostGroupServer)
-		v1.DELETE("/routes/:route/groups/:group/servers/:server", DeleteGroupServer)
+		v1.GET("/routes/:route/services/:service/servers", GetServiceServers)
+		v1.GET("/routes/:route/services/:service/servers/:server", GetServiceServer)
+		v1.PUT("/routes/:route/services/:service/servers/:server", PutServiceServer)
+		v1.POST("/routes/:route/services/:service/servers", PostServiceServer)
+		v1.DELETE("/routes/:route/services/:service/servers/:server", DeleteServiceServer)
 		/*
 		   Info
 		*/

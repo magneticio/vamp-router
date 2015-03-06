@@ -79,9 +79,9 @@ The structure of a route is as follows:
     fltr = filter
     qts = quotas
 
-The above example has two groups, *A* and *B*, but a route can have many groups. The start of the
+The above example has two services, *A* and *B*, but a route can have many services. The start of the
 route (the first frontend) has filters and quotas that influence the way traffic flows in a route,
-i.e. to which groups the traffic goes. All items in a route map to actual Haproxy types from the `vamp-loadbalancer/haproxy` Go package.
+i.e. to which services the traffic goes. All items in a route map to actual Haproxy types from the `vamp-loadbalancer/haproxy` Go package.
 
 ### Routes actions
 
@@ -94,17 +94,17 @@ Routes live under the `/routes` endpoint which provides the following actions:
     PUT     /routes/:route  
     DELETE  /routes/:route  
 
-    GET     /routes/:route/groups  
-    POST    /routes/:route/groups  
-    GET     /routes/:route/groups/:group  
-    PUT     /routes/:route/groups/:group  
-    DELETE  /routes/:route/groups/:group  
+    GET     /routes/:route/services  
+    POST    /routes/:route/services  
+    GET     /routes/:route/services/:service  
+    PUT     /routes/:route/services/:service  
+    DELETE  /routes/:route/services/:service  
 
-    GET     /routes/:route/groups/:group/servers  
-    GET     /routes/:route/groups/:group/servers/:server  
-    PUT     /routes/:route/groups/:group/servers/:server  
-    POST    /routes/:route/groups/:group/servers  
-    DELETE  /routes/:route/groups/:group/servers/:server 
+    GET     /routes/:route/services/:service/servers  
+    GET     /routes/:route/services/:service/servers/:server  
+    PUT     /routes/:route/services/:service/servers/:server  
+    POST    /routes/:route/services/:service/servers  
+    DELETE  /routes/:route/services/:service/servers/:server 
 
 
 For example, create a route by posting this json object to `routes`. All necessary backends, frontends, servers and sockets will be created "under water". Read the comments for specific details
@@ -115,11 +115,11 @@ For example, create a route by posting this json object to `routes`. All necessa
       "name": "test_route_2",                               # a unique name
       "port": 9026,                                         # the port to bind to
       "protocol": "http",
-      "filters": [                                          # some filter with a destination group
+      "filters": [                                          # some filter with a destination service
         {
           "name": "uses_internet_explorer",
           "condition": "hdr_sub(user-agent) MSIE",
-          "destination": "group_b"
+          "destination": "service_b"
         }
       ],
       "httpQuota": {
@@ -132,10 +132,10 @@ For example, create a route by posting this json object to `routes`. All necessa
         "rate": 10000,
         "expiryTime": "10s"
       },
-      "groups": [                                           # one or multiple groups
+      "services": [                                           # one or multiple services
         {
-          "name": "group_a",                                # a unique name within this set of groups
-          "weight": 30,                                     # weight of the group
+          "name": "service_a",                                # a unique name within this set of services
+          "weight": 30,                                     # weight of the service
           "servers": [
             {
               "name": "paas.55f73f0d-6087-4964-a70e",       # some name for your server. Should be unique
@@ -145,7 +145,7 @@ For example, create a route by posting this json object to `routes`. All necessa
           ]
         },
         {
-          "name": "group_b",
+          "name": "service_b",
           "weight": 70,
           "servers": [
             {
@@ -159,13 +159,13 @@ For example, create a route by posting this json object to `routes`. All necessa
     } 
 
 
-Updating the weight of the groups can be done by using a `PUT` request to the `groups` resource of a route:
+Updating the weight of the services can be done by using a `PUT` request to the `services` resource of a route:
 
-    $ http PUT http://localhost:10001/v1/routes/test_route_2/groups/group_a
+    $ http PUT http://localhost:10001/v1/routes/test_route_2/services/service_a
 
 
     {
-      "name": "group_a",                                
+      "name": "service_a",                                
       "weight": 40,                                     # a new weight
       "servers": [
         {

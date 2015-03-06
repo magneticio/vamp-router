@@ -122,9 +122,9 @@ func (r *Runtime) GetInfo() (Info, error) {
 - frontend
 - backend
 */
-func (r *Runtime) GetStats(statsType string) ([]StatsGroup, error) {
+func (r *Runtime) GetStats(statsType string) ([]StatsService, error) {
 
-	var Stats []StatsGroup
+	var Stats []StatsService
 	var cmdString string
 
 	switch statsType {

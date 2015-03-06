@@ -23,20 +23,20 @@ import (
     fltr = filter
     qts = quotas
 
-  The above example has two groups, a and b, but a route can have many groups. The start of the
+  The above example has two services, a and b, but a route can have many services. The start of the
   route (the first frontend) has filters and quotas that influence the way traffic flows in a route,
-  i.e. to which groups the traffic goes.
+  i.e. to which services the traffic goes.
 
   All items in a route map to actual Haproxy types from the vamp-loadbalancer/haproxy package.
 */
 type Route struct {
-	Name      string    `json:"name" binding: "required"`
-	Port      int       `json:"port" binding: "required"`
-	Protocol  string    `json:"protocol" binding: "required"`
-	HttpQuota Quota     `json:"httpQuota"`
-	TcpQuota  Quota     `json:"tcpQuota"`
-	Filters   []*Filter `json:"filters"`
-	Groups    []*Group  `json:"groups"`
+	Name      string     `json:"name" binding: "required"`
+	Port      int        `json:"port" binding: "required"`
+	Protocol  string     `json:"protocol" binding: "required"`
+	HttpQuota Quota      `json:"httpQuota"`
+	TcpQuota  Quota      `json:"tcpQuota"`
+	Filters   []*Filter  `json:"filters"`
+	Services  []*Service `json:"services"`
 }
 
 type Filter struct {
@@ -51,7 +51,7 @@ type Quota struct {
 	ExpiryTime   string `json:"expiryTime,omitempty" binding: "required"`
 }
 
-type Group struct {
+type Service struct {
 	Name    string    `json:"name" binding: "required"`
 	Weight  int       `json:"weight" binding: "required"`
 	Servers []*Server `json:"servers"`
@@ -131,7 +131,7 @@ type ProxyOptions struct {
 }
 
 // Struct to hold the output from the /stats endpoint
-type StatsGroup struct {
+type StatsService struct {
 	Pxname         string `json:"pxname"`
 	Svname         string `json:"svname"`
 	Qcur           string `json:"qcur"`
