@@ -80,7 +80,7 @@ func DeleteRoute(c *gin.Context) {
 	if err := Config(c).DeleteRoute(routeName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted route")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
 
@@ -185,7 +185,7 @@ func DeleteRouteGroup(c *gin.Context) {
 	if err := Config(c).DeleteRouteGroup(routeName, groupName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted route")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
 
@@ -234,7 +234,7 @@ func DeleteGroupServer(c *gin.Context) {
 	if err := Config(c).DeleteGroupServer(routeName, groupName, serverName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted server")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
 

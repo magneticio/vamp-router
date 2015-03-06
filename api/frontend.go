@@ -61,7 +61,7 @@ func DeleteFrontend(c *gin.Context) {
 	if err := Config(c).DeleteFrontend(frontendName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted frontend")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
 
@@ -104,6 +104,6 @@ func DeleteFrontendFilter(c *gin.Context) {
 	if err := Config(c).DeleteFilter(frontendName, FilterName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted Filter")
+		HandleReload(c, Config(c), 204, "")
 	}
 }

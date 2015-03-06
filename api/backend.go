@@ -62,7 +62,7 @@ func DeleteBackend(c *gin.Context) {
 	if err := Config(c).DeleteBackend(name); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted backend")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
 
@@ -161,6 +161,6 @@ func DeleteServer(c *gin.Context) {
 	if err := Config(c).DeleteServer(backend, server); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 200, "deleted server")
+		HandleReload(c, Config(c), 204, "")
 	}
 }
