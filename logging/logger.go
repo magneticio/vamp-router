@@ -21,7 +21,7 @@ func PrintLogo(version string) string {
 ╚██╗ ██╔╝██╔══██║██║╚██╔╝██║██╔═══╝
  ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
   ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
-                       loadbalancer
+                       router
                        version ` + version + `
                        by magnetic.io
                                       `
@@ -32,7 +32,7 @@ func PrintLogo(version string) string {
 
 func ConfigureLog(logPath string) *gologging.Logger {
 
-	var log = gologging.MustGetLogger("vamp-loadbalancer")
+	var log = gologging.MustGetLogger("vamp-router")
 	var backend *gologging.LogBackend
 	var format = gologging.MustStringFormatter(
 		"%{color}%{time:15:04:05.000} %{shortpkg:.4s} %{level:.4s} ==> %{color:reset} %{message}",
