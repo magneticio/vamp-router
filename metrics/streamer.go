@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"github.com/magneticio/vamp-loadbalancer/haproxy"
+	"github.com/magneticio/vamp-router/haproxy"
 	"reflect"
 	"strconv"
 	"strings"

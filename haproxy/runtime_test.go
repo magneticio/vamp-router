@@ -1,7 +1,7 @@
 package haproxy
 
 import (
-	"github.com/magneticio/vamp-loadbalancer/helpers"
+	"github.com/magneticio/vamp-router/helpers"
 	"io/ioutil"
 	"os"
 	"os/exec"

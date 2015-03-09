@@ -1,9 +1,9 @@
 package api
 
 import (
-	"github.com/magneticio/vamp-loadbalancer/haproxy"
-	"github.com/magneticio/vamp-loadbalancer/helpers"
-	"github.com/magneticio/vamp-loadbalancer/logging"
+	"github.com/magneticio/vamp-router/haproxy"
+	"github.com/magneticio/vamp-router/helpers"
+	"github.com/magneticio/vamp-router/logging"
 	gologger "github.com/op/go-logging"
 	"net/http"
 	"net/http/httptest"

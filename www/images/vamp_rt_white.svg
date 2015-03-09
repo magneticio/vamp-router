@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="304.45605"
+   height="47.5"
+   viewBox="0 0 304.45605 47.5"
+   id="svg3062">
+  <title
+     id="title3064">Slice 1</title>
+  <desc
+     id="desc3066">Created with Sketch.</desc>
+  <metadata
+     id="metadata3079">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Slice 1</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3068" />
+  <g
+     transform="translate(-10,-4.25)"
+     id="Page-1"
+     style="fill:none;stroke:none">
+    <text
+       id="vamp"
+       style="font-size:64px;font-weight:normal;fill:#ffffff;font-family:Righteous">
+      <tspan
+         x="10"
+         y="39"
+         id="tspan3072">vamp</tspan>
+    </text>
+    <text
+       id="Loadbalancer"
+       style="font-size:42px;fill:#ffffff;font-family:Roboto">
+      <tspan
+         x="187"
+         y="39"
+         id="tspan3075">Router</tspan>
+    </text>
+  </g>
+</svg>

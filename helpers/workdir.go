@@ -27,7 +27,7 @@ func (w *WorkDir) Dir() string {
 
 func (w *WorkDir) Create(dir string) error {
 
-	rel_path := "/.vamp_lb"
+	rel_path := "/.vamp_router"
 	socket_dir := "/sockets"
 
 	// allow the setting of a custom dir

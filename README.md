@@ -1,12 +1,12 @@
-# Vamp-loadbalancer
+# Vamp-router
 ---
 
-Vamp-loadbalancer is inspired by [bamboo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed. 
+Vamp-router is inspired by [bamboo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed. 
 
 *Note to HAproxy-rest users:* There are some breaking API changes. Most for the better, sticking more closely to
 REST conventions.
 
-Vamp-loadbalancers features are:
+Vamp-router's features are:
 
 -   Update the config through REST or through Zookeeper
 -   Set complex routes
@@ -17,13 +17,13 @@ Vamp-loadbalancers features are:
 -   Set HTTP & TCP Spike limiting *(experimental)*
 
 
-*Important* : Currently, vamp-loadbalancer does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy
+*Important* : Currently, vamp-router does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy
 
 ## Installing: the easy Docker way
 
 Start up an instance with all defaults and bind it to the local network interface
 
-    $ docker run --net=host magneticio/vamp-loadbalancer:latest
+    $ docker run --net=host magneticio/vamp-router:latest
 
     ██╗   ██╗ █████╗ ███╗   ███╗██████╗
     ██║   ██║██╔══██╗████╗ ████║██╔══██╗
@@ -31,7 +31,7 @@ Start up an instance with all defaults and bind it to the local network interfac
     ╚██╗ ██╔╝██╔══██║██║╚██╔╝██║██╔═══╝
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
-                           loadbalancer
+                           router
                            version 0.5.0
                            by magnetic.io
                                           
@@ -50,12 +50,12 @@ The default ports are:
 
 You could change the REST api port by adding the `-port` flag
 
-    $ docker run --net=host magneticio/vamp-loadbalancer:latest -port=1234
+    $ docker run --net=host magneticio/vamp-router:latest -port=1234
 
 Or by exporting an environment variable `VAMP_LB_PORT`.
      
      $ export VAMP_LB_PORT=12345
-     $ docker run --net=host magneticio/vamp-loadbalancer:latest
+     $ docker run --net=host magneticio/vamp-router:latest
 
 
     
@@ -81,7 +81,7 @@ The structure of a route is as follows:
 
 The above example has two services, *A* and *B*, but a route can have many services. The start of the
 route (the first frontend) has filters and quotas that influence the way traffic flows in a route,
-i.e. to which services the traffic goes. All items in a route map to actual Haproxy types from the `vamp-loadbalancer/haproxy` Go package.
+i.e. to which services the traffic goes. All items in a route map to actual Haproxy types from the `vamp-router/haproxy` Go package.
 
 ### Routes actions
 
@@ -320,7 +320,7 @@ Post a configuration. You can use the example file `resources/config_example.jso
      
 ### Updating the full configuration using Zookeeper
 
-When you provide vamp-loadbakancer with a valid Zookeeper connection string using the `-zooConString` flag, vamp-loadbalancer will watch for changes to the key: `/magnetic/vamplb`. You can set your own namespace using the `-zooConKey` flag. To this node you need to publish a full configuration in JSON format. Starting up a localproxy using Zookeeper
+When you provide vamp-router with a valid Zookeeper connection string using the `-zooConString` flag, vamp-router will watch for changes to the key: `/magnetic/vamplb`. You can set your own namespace using the `-zooConKey` flag. To this node you need to publish a full configuration in JSON format. Starting up a localproxy using Zookeeper
 looks like this:  
 
     -zooConString=10.161.63.88:2181,10.189.106.106:2181,10.5.99.23:2181    
@@ -373,7 +373,7 @@ with a continuous stream of all stats, using the following format:
 Statistics are also published as Kafka topics. Configure a Kafka endpoint using the `-kakfaHost` and `-kafkaPort` flags.
 Stats are published as the following topic:
 
-- loadbalancer.all
+- router.all
 
 The messages on that topic are json strings:
 
@@ -418,10 +418,10 @@ For an explanation of the metric types, please read [this](http://cbonte.github.
       -customWorkDir="":                                Custom working directory for logs, configs and sockets
       -kafkaHost="":                                    The hostname or ip address of the Kafka host
       -kafkaPort=9092:                                  The port of the Kafka host
-      -lbConfigFile="/haproxy_new.cfg":                 Target location of the generated HAproxy config file
-      -lbJson="/vamp_loadbalancer.json":                JSON file to store internal config.
-      -lbTemplate="configuration/templates/haproxy_config.template": Template file to build HAproxy load balancer config
-      -logPath="/logs/vamp-loadbalancer.log":           Location of the log file
+      -configFile="/haproxy_new.cfg":                 Target location of the generated HAproxy config file
+      -json="/vamp_router.json":                JSON file to store internal config.
+      -template="configuration/templates/haproxy_config.template": Template file to build HAproxy config
+      -logPath="/logs/vamp-router.log":           Location of the log file
       -pidFile="/haproxy-private.pid":                  Location of the HAproxy PID file
       -port=10001:                                      Port/IP to use for the REST interface.
       -zooConKey="magneticio/vamplb":                   Zookeeper root key
@@ -439,12 +439,12 @@ Install HAproxy 1.5 or greater in whatever way you like. Just make sure the `hap
 
 Clone this repo 
 
-    git clone https://github.com/magneticio/vamp-loadbalancer 
+    git clone https://github.com/magneticio/vamp-router 
 
 CD into the directory just and build the program and run it. 
  
     $ go install
-    $ vamp-loadbalancer
+    $ vamp-router
 
 If you're on Mac OSX or Windows and want to compile for Linux (which is probably the OS 
 you're using to run HAproxy), you need to cross compile. 

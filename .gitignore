@@ -9,7 +9,7 @@
 _obj
 _test
 _workspace
-target/linux_i386/vamp-loadbalancer
+target/linux_i386/vamp-router
 
 
 # Architecture specific extensions/prefixes

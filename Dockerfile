@@ -2,8 +2,8 @@ FROM ubuntu:latest
 
 MAINTAINER tim@magnetic.io
 
-# This Dockerfile does the basic install of vamp-loadbalancer and Haproxy. Please see:
-# https://github.com/magneticio/vamp-loadbalancer
+# This Dockerfile does the basic install of vamp-router and Haproxy. Please see:
+# https://github.com/magneticio/vamp-router
 #
 # HAproxy is currently version 1.5.3 build from source on Ubuntu with the following options
 # apt-get install build-essential
@@ -12,7 +12,7 @@ MAINTAINER tim@magnetic.io
 #
 #
 
-ADD ./target/linux_i386/vamp-loadbalancer /vamp-loadbalancer
+ADD ./target/linux_i386/vamp-router /vamp-router
 
 ADD ./configuration /configuration
 
@@ -26,4 +26,4 @@ EXPOSE 10001
 
 EXPOSE 1988
 
-ENTRYPOINT ["/vamp-loadbalancer"]
+ENTRYPOINT ["/vamp-router"]

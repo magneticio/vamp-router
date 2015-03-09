@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/magneticio/vamp-loadbalancer/tools"
+	"github.com/magneticio/vamp-router/tools"
 	"io/ioutil"
 	"net"
 	"os"
