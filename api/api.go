@@ -124,7 +124,11 @@ func HandleReload(c *gin.Context, config *haproxy.Config, status int, message gi
 
 // Handles the simple successful return status
 func HandleSucces(c *gin.Context, status int, message gin.H) {
-	c.JSON(status, message)
+	if status == 204 {
+		c.String(status, "")
+	} else {
+		c.JSON(status, message)
+	}
 }
 
 // Handles the return of an error from the Haproxy object
