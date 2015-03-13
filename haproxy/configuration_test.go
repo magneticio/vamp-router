@@ -40,8 +40,10 @@ func TestConfiguration_GetConfigFromDisk(t *testing.T) {
 }
 
 func TestConfiguration_SetWeight(t *testing.T) {
-	err := haConfig.SetWeight("test_be_1", "test_be_1_a", 20)
-	if err != nil {
+	if err := haConfig.SetWeight("test_be_1", "test_be_1_a", 20); err != nil {
+		t.Errorf("err: %v", err)
+	}
+	if err := haConfig.SetWeight("test_be_1", "non_existing_server", 20); err == nil {
 		t.Errorf("err: %v", err)
 	}
 }
@@ -70,14 +72,21 @@ func TestConfiguration_GetFrontend(t *testing.T) {
 	if _, err := haConfig.GetFrontend("test_fe_1"); err != nil {
 		t.Errorf("Failed to get frontend")
 	}
+	if _, err := haConfig.GetFrontend("non_existing_frontend"); err == nil {
+		t.Errorf("Should return error on non-existing frontend")
+	}
 }
 
 func TestConfiguration_AddFrontend(t *testing.T) {
 
 	fe := Frontend{Name: "my_test_frontend", Mode: "http", DefaultBackend: "test_be_1"}
-	err := haConfig.AddFrontend(&fe)
-	if err != nil {
+	if err := haConfig.AddFrontend(&fe); err != nil {
 		t.Errorf("Failed to add frontend")
+	} else {
+		if err := haConfig.AddFrontend(&fe); err == nil {
+			t.Errorf("Should return error on already existing frontend")
+		}
+
 	}
 	if haConfig.Frontends[3].Name != "my_test_frontend" {
 		t.Errorf("Failed to add frontend")
