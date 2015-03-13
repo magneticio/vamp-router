@@ -30,9 +30,9 @@ import (
   All items in a route map to actual Haproxy types from the vamp-loadbalancer/haproxy package.
 */
 type Route struct {
-	Name      string     `json:"name" binding: "required"`
-	Port      int        `json:"port" binding: "required"`
-	Protocol  string     `json:"protocol" binding: "required"`
+	Name      string     `json:"name" binding:"required"`
+	Port      int        `json:"port" binding:"required"`
+	Protocol  string     `json:"protocol" binding:"required"`
 	HttpQuota Quota      `json:"httpQuota"`
 	TcpQuota  Quota      `json:"tcpQuota"`
 	Filters   []*Filter  `json:"filters"`
@@ -40,33 +40,33 @@ type Route struct {
 }
 
 type Filter struct {
-	Name        string `json:"name" binding: "required"`
-	Condition   string `json:"condition" binding: "required"`
-	Destination string `json:"destination" binding: "required"`
+	Name        string `json:"name" binding:"required"`
+	Condition   string `json:"condition" binding:"required"`
+	Destination string `json:"destination" binding:"required"`
 }
 
 type Quota struct {
-	SampleWindow string `json:"sampleWindow,omitempty" binding: "required"`
-	Rate         int    `json:"rate,omitempty" binding: "required"`
-	ExpiryTime   string `json:"expiryTime,omitempty" binding: "required"`
+	SampleWindow string `json:"sampleWindow,omitempty" binding:"required"`
+	Rate         int    `json:"rate,omitempty" binding:"required"`
+	ExpiryTime   string `json:"expiryTime,omitempty" binding:"required"`
 }
 
 type Service struct {
-	Name    string    `json:"name" binding: "required"`
-	Weight  int       `json:"weight" binding: "required"`
+	Name    string    `json:"name" binding:"required"`
+	Weight  int       `json:"weight" binding:"required"`
 	Servers []*Server `json:"servers"`
 }
 
 type Server struct {
-	Name string `json:"name" binding: "required"`
-	Host string `json:"host" binding: "required"`
-	Port int    `json:"port" binding: "required"`
+	Name string `json:"name" binding:"required"`
+	Host string `json:"host" binding:"required"`
+	Port int    `json:"port" binding:"required"`
 }
 
 type ServerDetail struct {
-	Name          string `json:"name" binding: "required"`
-	Host          string `json:"host" binding: "required"`
-	Port          int    `json:"port" binding: "required"`
+	Name          string `json:"name" binding:"required"`
+	Host          string `json:"host" binding:"required"`
+	Port          int    `json:"port" binding:"required"`
 	UnixSock      string `json:"unixSock"`
 	Weight        int    `json:"weight" binding:"required"`
 	MaxConn       int    `json:"maxconn"`

@@ -6,6 +6,7 @@ import (
 	"github.com/magneticio/vamp-router/haproxy"
 	"github.com/magneticio/vamp-router/metrics"
 	gologger "github.com/op/go-logging"
+	"net/http"
 )
 
 func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, log *gologger.Logger, SSEBroker *metrics.SSEBroker) *gin.Engine {
@@ -102,19 +103,19 @@ func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, l
 
 // Handles the reloading and persisting of the Haproxy config after a successful mutation of the
 // config object.
-func HandleReload(c *gin.Context, config *haproxy.Config, status int, message string) {
+func HandleReload(c *gin.Context, config *haproxy.Config, status int, message gin.H) {
 
 	runtime := c.MustGet("haRuntime").(*haproxy.Runtime)
 
 	err := config.RenderAndPersist()
 	if err != nil {
-		HandleError(c, &haproxy.Error{500, errors.New("Error rendering config file")})
+		HandleError(c, &haproxy.Error{http.StatusInternalServerError, errors.New("Error rendering config file")})
 		return
 	}
 
 	err = runtime.Reload(config)
 	if err != nil {
-		HandleError(c, &haproxy.Error{500, errors.New("Error reloading the HAproxy configuration")})
+		HandleError(c, &haproxy.Error{http.StatusInternalServerError, errors.New("Error reloading the HAproxy configuration")})
 		return
 	}
 
@@ -122,13 +123,13 @@ func HandleReload(c *gin.Context, config *haproxy.Config, status int, message st
 }
 
 // Handles the simple successful return status
-func HandleSucces(c *gin.Context, status int, message string) {
-	c.String(status, message)
+func HandleSucces(c *gin.Context, status int, message gin.H) {
+	c.JSON(status, message)
 }
 
 // Handles the return of an error from the Haproxy object
 func HandleError(c *gin.Context, err *haproxy.Error) {
-	c.String(err.Code, err.Error())
+	c.JSON(err.Code, gin.H{"status": err.Error()})
 }
 
 // helper methods to grab the injected Config from the Http context

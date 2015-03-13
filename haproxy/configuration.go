@@ -329,11 +329,11 @@ func (c *Config) BackendUsed(name string) *Error {
 	if c.BackendExists(name) {
 		for _, frontend := range c.Frontends {
 			if frontend.DefaultBackend == name {
-				return &Error{500, errors.New("Backend still in use by: " + frontend.Name)}
+				return &Error{400, errors.New("Backend still in use by: " + frontend.Name)}
 			}
 			for _, filter := range frontend.Filters {
 				if filter.Destination == name {
-					return &Error{500, errors.New("Backend still in use by: " + frontend.Name + ".Filters." + filter.Name)}
+					return &Error{400, errors.New("Backend still in use by: " + frontend.Name + ".Filters." + filter.Name)}
 				}
 			}
 		}

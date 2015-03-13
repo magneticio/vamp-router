@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
+	"net/http"
 )
 
 func GetBackends(c *gin.Context) {
@@ -12,9 +13,9 @@ func GetBackends(c *gin.Context) {
 
 	result := Config(c).GetBackends()
 	if result != nil {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	} else {
-		c.String(404, "no backends found")
+		c.JSON(http.StatusNotFound, gin.H{"status": "no backends found"})
 	}
 
 }
@@ -29,7 +30,7 @@ func GetBackend(c *gin.Context) {
 	if result, err := Config(c).GetBackend(backend); err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -45,10 +46,10 @@ func PostBackend(c *gin.Context) {
 		if err := Config(c).AddBackend(&backend); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created backend")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created backend"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -62,7 +63,7 @@ func DeleteBackend(c *gin.Context) {
 	if err := Config(c).DeleteBackend(name); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }
 
@@ -76,7 +77,7 @@ func GetServers(c *gin.Context) {
 	if result, err := Config(c).GetServers(backend); err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -91,7 +92,7 @@ func GetServer(c *gin.Context) {
 	if result, err := Config(c).GetServer(backend, server); err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -107,10 +108,10 @@ func PostServer(c *gin.Context) {
 		if err := Config(c).AddServer(backend, &server); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created server")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created server"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -141,12 +142,12 @@ func PutServerWeight(c *gin.Context) {
 				if err := Config(c).SetWeight(backend, server, json.Weight); err != nil {
 					HandleError(c, err)
 				} else {
-					HandleReload(c, Config(c), 200, "updated server weight")
+					HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated server weight"})
 				}
 			}
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -161,6 +162,6 @@ func DeleteServer(c *gin.Context) {
 	if err := Config(c).DeleteServer(backend, server); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
+	"net/http"
 )
 
 func GetFrontends(c *gin.Context) {
@@ -12,9 +13,9 @@ func GetFrontends(c *gin.Context) {
 
 	result := Config(c).GetFrontends()
 	if result != nil {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	} else {
-		c.String(404, "no frontends found")
+		c.JSON(http.StatusNotFound, gin.H{"status": "no frontends found"})
 	}
 
 }
@@ -29,7 +30,7 @@ func GetFrontend(c *gin.Context) {
 	if result, err := Config(c).GetFrontend(frontend); err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -44,10 +45,10 @@ func PostFrontend(c *gin.Context) {
 		if err := Config(c).AddFrontend(&frontend); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created frontend")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created frontend"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -61,7 +62,7 @@ func DeleteFrontend(c *gin.Context) {
 	if err := Config(c).DeleteFrontend(frontendName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }
 
@@ -73,7 +74,7 @@ func GetFrontendFilters(c *gin.Context) {
 	frontend := c.Params.ByName("name")
 
 	status := Config(c).GetFilters(frontend)
-	c.JSON(200, status)
+	c.JSON(http.StatusOK, status)
 
 }
 
@@ -87,9 +88,9 @@ func PostFrontendFilter(c *gin.Context) {
 
 	if c.Bind(&Filter) {
 		Config(c).AddFilter(frontend, &Filter)
-		HandleReload(c, Config(c), 201, "created Filter")
+		HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created Filter"})
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -104,6 +105,6 @@ func DeleteFrontendFilter(c *gin.Context) {
 	if err := Config(c).DeleteFilter(frontendName, FilterName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }

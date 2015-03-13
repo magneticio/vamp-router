@@ -2,7 +2,9 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/magneticio/vamp-router/haproxy"
+	"net/http"
 )
 
 func GetRoutes(c *gin.Context) {
@@ -14,7 +16,7 @@ func GetRoutes(c *gin.Context) {
 	if Config(c).GetRoutes() != nil {
 		c.JSON(200, result)
 	} else {
-		c.String(404, "no routes found")
+		c.String(http.StatusNotFound, "no routes found")
 	}
 
 }
@@ -29,7 +31,7 @@ func GetRoute(c *gin.Context) {
 	if result, err := Config(c).GetRoute(routeName); err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -41,14 +43,14 @@ func PutRoute(c *gin.Context) {
 	var route haproxy.Route
 	routeName := c.Params.ByName("route")
 
-	if c.Bind(&route) {
+	if c.BindWith(&route, binding.JSON) {
 		if err := Config(c).UpdateRoute(routeName, &route); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 200, "updated route")
+			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated route"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -63,10 +65,10 @@ func PostRoute(c *gin.Context) {
 		if err := Config(c).AddRoute(&route); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created route")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created route"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -80,7 +82,7 @@ func DeleteRoute(c *gin.Context) {
 	if err := Config(c).DeleteRoute(routeName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }
 
@@ -95,7 +97,7 @@ func GetRouteServices(c *gin.Context) {
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -111,7 +113,7 @@ func GetRouteService(c *gin.Context) {
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 
 }
@@ -129,7 +131,7 @@ func PutRouteService(c *gin.Context) {
 		if err := Config(c).UpdateRouteService(routeName, serviceName, &service); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 200, "updated service")
+			HandleReload(c, Config(c), 200, gin.H{"status": "updated service"})
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -148,10 +150,10 @@ func PutRouteServices(c *gin.Context) {
 		if err := Config(c).UpdateRouteServices(routeName, services); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 200, "updated services")
+			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated services"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -167,10 +169,10 @@ func PostRouteService(c *gin.Context) {
 		if err := Config(c).AddRouteServices(routeName, services); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created service(s)")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created service(s)"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -185,7 +187,7 @@ func DeleteRouteService(c *gin.Context) {
 	if err := Config(c).DeleteRouteService(routeName, serviceName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }
 
@@ -201,7 +203,7 @@ func GetServiceServers(c *gin.Context) {
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -218,7 +220,7 @@ func GetServiceServer(c *gin.Context) {
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -234,7 +236,7 @@ func DeleteServiceServer(c *gin.Context) {
 	if err := Config(c).DeleteServiceServer(routeName, serviceName, serverName); err != nil {
 		HandleError(c, err)
 	} else {
-		HandleReload(c, Config(c), 204, "")
+		HandleReload(c, Config(c), http.StatusNoContent, gin.H{})
 	}
 }
 
@@ -251,10 +253,10 @@ func PostServiceServer(c *gin.Context) {
 		if err := Config(c).AddServiceServer(routeName, serviceName, &server); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 201, "created server")
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created server"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
 
@@ -272,9 +274,9 @@ func PutServiceServer(c *gin.Context) {
 		if err := Config(c).UpdateServiceServer(routeName, serviceName, serverName, &server); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 200, "updated server")
+			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated server"})
 		}
 	} else {
-		c.String(500, "Invalid JSON")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
 }
