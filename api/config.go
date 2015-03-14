@@ -19,10 +19,14 @@ func PostConfig(c *gin.Context) {
 	Config(c).BeginWriteTrans()
 	defer Config(c).EndWriteTrans()
 
-	config := c.MustGet("haConfig").(*haproxy.Config)
+	var config haproxy.Config
 
 	if c.Bind(&config) {
-		HandleReload(c, config, http.StatusOK, gin.H{"status": "updated config"})
+		if err := Config(c).UpdateConfig(&config); err != nil {
+			HandleError(c, err)
+		} else {
+			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "updated config"})
+		}
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}

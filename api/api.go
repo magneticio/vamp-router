@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func CreateApi(port int, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, log *gologger.Logger, SSEBroker *metrics.SSEBroker) *gin.Engine {
+func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, SSEBroker *metrics.SSEBroker) *gin.Engine {
 
 	gin.SetMode("release")
 

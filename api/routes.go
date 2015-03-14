@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/magneticio/vamp-router/haproxy"
 	"net/http"
 )
@@ -43,7 +42,7 @@ func PutRoute(c *gin.Context) {
 	var route haproxy.Route
 	routeName := c.Params.ByName("route")
 
-	if c.BindWith(&route, binding.JSON) {
+	if c.Bind(&route) {
 		if err := Config(c).UpdateRoute(routeName, &route); err != nil {
 			HandleError(c, err)
 		} else {
