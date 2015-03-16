@@ -27,6 +27,7 @@ var (
 	zooConString     string
 	zooConKey        string
 	pidFilePath      string
+	headless         bool
 	log              *gologger.Logger
 	version          = "0.6.0-dev"
 	stream           metrics.Streamer
@@ -47,6 +48,7 @@ func init() {
 	flag.StringVar(&zooConKey, "zooConKey", "magneticio/vamplb", "Zookeeper root key")
 	flag.StringVar(&pidFilePath, "pidFile", "/haproxy-private.pid", "Location of the HAproxy PID file")
 	flag.StringVar(&customWorkDir, "customWorkDir", "", "Custom working directory for logs, configs and sockets")
+	flag.BoolVar(&headless, "headless", false, "Run without any logging output to the console")
 }
 
 func main() {
@@ -66,6 +68,7 @@ func main() {
 	tools.SetValueFromEnv(&zooConKey, "VAMP_RT_ZOO_KEY")
 	tools.SetValueFromEnv(&pidFilePath, "VAMP_RT_PID_PATH")
 	tools.SetValueFromEnv(&customWorkDir, "VAMP_RT_CUSTOM_WORKDIR")
+	tools.SetValueFromEnv(&headless, "VAMP_RT_HEADLESS")
 
 	//create working dir if not already there
 	if err := workDir.Create(customWorkDir); err != nil {
@@ -73,7 +76,7 @@ func main() {
 	}
 
 	// setup logging
-	log = logging.ConfigureLog(workDir.Dir() + logPath)
+	log = logging.ConfigureLog(workDir.Dir()+logPath, headless)
 	log.Info(logging.PrintLogo(version))
 
 	/*
@@ -189,6 +192,7 @@ func main() {
 
 	*/
 	log.Notice("Initializing REST API...")
-	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker).Run("0.0.0.0:" + strconv.Itoa(port))
+	restApi := api.CreateApi(log, &haConfig, &haRuntime, sseBroker)
+	restApi.Run("0.0.0.0:" + strconv.Itoa(port))
 
 }

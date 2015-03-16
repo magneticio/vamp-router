@@ -405,7 +405,7 @@ The messages on that topic are json strings:
         "timestamp": "2015-02-24T18:45:07Z"
     }
 
-__Note:__ currently, not all Haproxy metric types are sent to Kafka. At this moment, the list is hardcoded as a `wantedMetrics` slice:
+__Note:__ currently, not all Haproxy metric types are sent. At this moment, the list is hardcoded as a `wantedMetrics` slice:
     
     wantedMetrics  := []string{ "Scur", "Qcur","Smax","Slim","Weight","Qtime","Ctime","Rtime","Ttime","Req_rate","Req_rate_max","Req_tot","Rate","Rate_lim","Rate_max" }
 
@@ -459,4 +459,14 @@ Compile the compiler with the correct arguments for OS and ARC
 Compile the application
 
     $ GOOS=windows GOARCH=386 go build 
+
+## Integration testing (experimental)
+
+Integration tests require a functioning local Docker installation and Haproxy. Run the integration test suite as follows:
+
+  $ go test -tags integration -v --customWorkDir=/tmp/vamp_integration_test --headless=true
+
+The `--customWorkDir` flag makes sure you will not overwrite or delete any previous settings as the test runner will delete
+this direcory at the end. The `--headless` flag will ensure only the test code outputs to the console.
+
     

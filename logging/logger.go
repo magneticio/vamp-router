@@ -30,7 +30,7 @@ func PrintLogo(version string) string {
 
 }
 
-func ConfigureLog(logPath string) *gologging.Logger {
+func ConfigureLog(logPath string, headless bool) *gologging.Logger {
 
 	var log = gologging.MustGetLogger("vamp-router")
 	var backend *gologging.LogBackend
@@ -39,13 +39,27 @@ func ConfigureLog(logPath string) *gologging.Logger {
 	)
 
 	// mix in the Lumberjack logger so we can have rotation on log files
-	if len(logPath) > 0 {
-		backend = gologging.NewLogBackend(io.MultiWriter(&lumberjack.Logger{
-			Filename:   logPath,
-			MaxSize:    50, // megabytes
-			MaxBackups: 2,  //days
-			MaxAge:     14,
-		}, os.Stdout), "", 0)
+	if headless {
+
+		if len(logPath) > 0 {
+			backend = gologging.NewLogBackend(io.MultiWriter(&lumberjack.Logger{
+				Filename:   logPath,
+				MaxSize:    50, // megabytes
+				MaxBackups: 2,  //days
+				MaxAge:     14,
+			}), "", 0)
+		}
+
+	} else {
+
+		if len(logPath) > 0 {
+			backend = gologging.NewLogBackend(io.MultiWriter(&lumberjack.Logger{
+				Filename:   logPath,
+				MaxSize:    50, // megabytes
+				MaxBackups: 2,  //days
+				MaxAge:     14,
+			}, os.Stdout), "", 0)
+		}
 	}
 
 	backendFormatter := gologging.NewBackendFormatter(backend, format)
