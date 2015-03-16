@@ -65,6 +65,33 @@ func (c *Config) GetFrontends() []*Frontend {
 	return c.Frontends
 }
 
+//updates the whole config in one go
+func (c *Config) UpdateConfig(config *Config) *Error {
+
+	// var frontends []*Frontend
+	// var backends []*Backend
+	var routes []*Route
+
+	c.Frontends = config.Frontends
+	c.Backends = config.Backends
+
+	// clear out all routes, otherwise we cannot update any routes that already exist.
+
+	c.Routes = routes
+
+	for _, route := range config.Routes {
+		if err := c.AddRoute(route); err != nil {
+			return err
+		}
+	}
+
+	c.Routes = config.Routes
+
+	// c = config
+
+	return nil
+}
+
 // gets a frontend
 func (c *Config) GetFrontend(name string) (*Frontend, *Error) {
 
