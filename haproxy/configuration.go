@@ -85,10 +85,6 @@ func (c *Config) UpdateConfig(config *Config) *Error {
 		}
 	}
 
-	c.Routes = config.Routes
-
-	// c = config
-
 	return nil
 }
 

@@ -1,7 +1,7 @@
 package haproxy
 
 // creates a Frontend object
-func (c *Config) frontendFactory(name string, mode string, port int, backend *Backend) *Frontend {
+func (c *Config) frontendFactory(name string, mode string, port int, filter []*Filter, backend *Backend) *Frontend {
 
 	return &Frontend{
 		Name:           name,
@@ -10,7 +10,7 @@ func (c *Config) frontendFactory(name string, mode string, port int, backend *Ba
 		BindIp:         "0.0.0.0",
 		Options:        ProxyOptions{},
 		DefaultBackend: backend.Name,
-		Filters:        []*Filter{},
+		Filters:        filter,
 		HttpQuota:      Quota{},
 		TcpQuota:       Quota{},
 	}

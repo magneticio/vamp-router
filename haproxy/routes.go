@@ -4,6 +4,10 @@ import (
 	"errors"
 )
 
+const (
+	DEFAULT_WEIGHT = 100
+)
+
 // gets all routes
 func (c *Config) GetRoutes() []*Route {
 	return c.Routes
@@ -37,13 +41,16 @@ func (c *Config) AddRoute(route *Route) *Error {
 
 	// When creating a new route, we have to create the stable frontends and backends.
 	// 1. Check if the route exists
-	// 1. Create stable Backend with empty server slice
-	// 2. Create stable Frontend and add the stable Backend to it
+	// 2. Create stable Backend with empty server slice
+	// 3. Create stable Frontend and add the stable Backend to it
 
 	stableBackend := c.backendFactory(route.Name, route.Protocol, true, []*ServerDetail{})
 	beSlice = append(beSlice, stableBackend)
 
-	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, stableBackend)
+	// 4. As an extra step, we need to replace the destination in any filters with the full backend name
+	resolvedFilters := c.resolveFilters(route)
+
+	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, resolvedFilters, stableBackend)
 	feSlice = append(feSlice, stableFrontend)
 	/*
 
@@ -56,6 +63,7 @@ func (c *Config) AddRoute(route *Route) *Error {
 	*/
 
 	for _, service := range route.Services {
+
 		socketServer := c.socketServerFactory(ServerName(route.Name, service.Name), service.Weight)
 		stableBackend.Servers = append(stableBackend.Servers, socketServer)
 
@@ -67,11 +75,11 @@ func (c *Config) AddRoute(route *Route) *Error {
 
 		/*
 			for servers
-				1. Create Server
+				1. Create Server, with a default weight.
 				2. Add Server to Backend Servers slice
 		*/
 		for _, server := range service.Servers {
-			srv := c.serverFactory(server.Name, service.Weight, server.Host, server.Port)
+			srv := c.serverFactory(server.Name, DEFAULT_WEIGHT, server.Host, server.Port)
 			backend.Servers = append(backend.Servers, srv)
 		}
 	}
@@ -339,4 +347,15 @@ func (c *Config) UpdateServiceServer(routeName string, serviceName string, serve
 		return err
 	}
 	return nil
+}
+
+// a convenience function for setting the correct, full backend names in filters
+func (c *Config) resolveFilters(route *Route) []*Filter {
+
+	var resolvedFilters []*Filter
+	for _, filter := range route.Filters {
+		filter.Destination = (route.Name + "." + filter.Destination)
+		resolvedFilters = append(resolvedFilters, filter)
+	}
+	return resolvedFilters
 }
