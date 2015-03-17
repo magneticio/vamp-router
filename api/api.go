@@ -57,6 +57,7 @@ func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haprox
 		v1.GET("/stats/frontends", GetFrontendStats)
 		v1.GET("/stats/servers", GetServerStats)
 		v1.GET("/stats/stream", SSEMiddleware(SSEBroker), GetSSEStream)
+		v1.HEAD("/stats/stream", GetSSEContentType)
 
 		/*
 		   Config
