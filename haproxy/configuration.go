@@ -70,14 +70,13 @@ func (c *Config) UpdateConfig(config *Config) *Error {
 
 	// var frontends []*Frontend
 	// var backends []*Backend
-	var routes []*Route
 
 	c.Frontends = config.Frontends
 	c.Backends = config.Backends
 
 	// clear out all routes, otherwise we cannot update any routes that already exist.
 
-	c.Routes = routes
+	c.Routes = []*Route{}
 
 	for _, route := range config.Routes {
 		if err := c.AddRoute(route); err != nil {
