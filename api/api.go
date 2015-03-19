@@ -97,6 +97,12 @@ func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haprox
 		   Info
 		*/
 		v1.GET("/info", GetInfo)
+
+		/*
+			Debug helpers
+		*/
+
+		v1.GET("/debug/reset", Reset)
 	}
 
 	return r

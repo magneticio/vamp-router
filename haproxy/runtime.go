@@ -94,19 +94,19 @@ func (r *Runtime) SetWeight(backend string, server string, weight int) (string, 
 // }
 
 // Gets basic info on haproxy process
-func (r *Runtime) GetInfo() (Info, error) {
+func (r *Runtime) GetInfo() (Info, *Error) {
 	var Info Info
 	result, err := r.cmd("show info \n")
 	if err != nil {
-		return Info, err
+		return Info, &Error{500, errors.New("Error getting info")}
 	} else {
 		result, err := tools.MultiLineToJson(result)
 		if err != nil {
-			return Info, err
+			return Info, &Error{500, err}
 		} else {
 			err := json.Unmarshal([]byte(result), &Info)
 			if err != nil {
-				return Info, err
+				return Info, &Error{500, err}
 			} else {
 				return Info, nil
 			}
@@ -183,4 +183,12 @@ func (r *Runtime) cmd(cmd string) (string, error) {
 		}
 
 	}
+}
+
+func (r *Runtime) Reset() *Error {
+
+	if _, err := r.cmd("clear counters all" + "\n"); err != nil {
+		return &Error{500, errors.New("Error resetting counters")}
+	}
+	return nil
 }

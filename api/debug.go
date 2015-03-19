@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-func GetInfo(c *gin.Context) {
+func Reset(c *gin.Context) {
 
-	status, err := Runtime(c).GetInfo()
+	err := Runtime(c).Reset()
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(http.StatusOK, status)
+		c.JSON(http.StatusOK, "reset counters")
 	}
 }
