@@ -11,6 +11,6 @@ func Reset(c *gin.Context) {
 	if err != nil {
 		HandleError(c, err)
 	} else {
-		c.JSON(http.StatusOK, "reset counters")
+		c.JSON(http.StatusOK, gin.H{"status": "reset counters"})
 	}
 }
