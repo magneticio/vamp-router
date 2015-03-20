@@ -1,42 +1,18 @@
 {
-    "name": "Test Percentage Based Routing 33",
-    "useCookies" : false,
+    "name": "Test Simple Cookie Affinity",
+    "useCookies" : true,
     "cases": [
         {
-            "url": "http://localhost:8000/version",
+            "url": "http://localhost:8000/session",
             "verb": "GET",
             "headers": [],
-            "expect": "a"
+            "expect": "{\"count\":0}"
         },
         {
-            "url": "http://localhost:8000/version",
+            "url": "http://localhost:8000/session",
             "verb": "GET",
             "headers": [],
-            "expect": "b"
-        },
-        {
-            "url": "http://localhost:8000/version",
-            "verb": "GET",
-            "headers": [],
-            "expect": "c"
-        },
-        {
-            "url": "http://localhost:8000/version",
-            "verb": "GET",
-            "headers": [],
-            "expect": "a"
-        },
-        {
-            "url": "http://localhost:8000/version",
-            "verb": "GET",
-            "headers": [],
-            "expect": "b"
-        },
-        {
-            "url": "http://localhost:8000/version",
-            "verb": "GET",
-            "headers": [],
-            "expect": "c"
+            "expect": "{\"count\":1}"
         }        
     ],
     "containers": [
@@ -53,13 +29,6 @@
             "name": "monarch_b",
             "image": "magneticio/monarch",
             "parameters": "--version=b"
-        },
-        {
-            "outPort": 9014,
-            "inPort": 8080,
-            "name": "monarch_c",
-            "image": "magneticio/monarch",
-            "parameters": "--version=c"
         }
     ],
     "config": {
@@ -74,7 +43,7 @@
                 "services": [
                     {
                         "name": "service_a",
-                        "weight": 33,
+                        "weight": 100,
                         "servers": [
                             {
                                 "name": "server_1",
@@ -85,23 +54,12 @@
                     },
                     {
                         "name": "service_b",
-                        "weight": 33,
+                        "weight": 0,
                         "servers": [
                             {
                                 "name": "server_1",
                                 "host": "192.168.59.103",
                                 "port": 9013
-                            }
-                        ]
-                    },
-                    {
-                        "name": "service_c",
-                        "weight": 33,
-                        "servers": [
-                            {
-                                "name": "server_1",
-                                "host": "192.168.59.103",
-                                "port": 9014
                             }
                         ]
                     }

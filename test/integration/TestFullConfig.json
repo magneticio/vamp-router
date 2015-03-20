@@ -1,5 +1,5 @@
 {
-    "name": "Test filled configuration",
+    "name": "Test basic configuration insertion.",
         "case" : [ 
             {
                 "url" : "http://localhost:8000/version",

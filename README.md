@@ -17,7 +17,9 @@ Vamp-router's features are:
 -   Set HTTP & TCP Spike limiting *(experimental)*
 
 
-*Important* : Currently, vamp-router does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy
+*Important:* : Currently, Vamp-router does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy.
+
+*Important:* : Vamp-router should be run on a "proper" Linux box or container. It will work on Mac OSX for developing, building and testing, but reloading will drop connections due to OSX's TCP stack.
 
 ## Installing: the easy Docker way
 
@@ -32,7 +34,7 @@ Start up an instance with all defaults and bind it to the local network interfac
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
                            router
-                           version 0.5.0
+                           version 0.7.0
                            by magnetic.io
                                           
     18:39:05.413 main NOTI ==>  Attempting to load config at //.vamp_lb/haproxy_new.cfg

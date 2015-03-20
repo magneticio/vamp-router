@@ -31,6 +31,7 @@ const (
 	PID_FILE      = "vamp_lb_test.pid"
 	TEST_FILES    = "test/integration/"
 	WORK_DIR      = "/tmp/vamp_router_integration_test/"
+	DOCKER_HOST   = "192.168.59.103"
 )
 
 // TestHarnass is an object that holds the prerequisites for setting up a test scenario
@@ -75,7 +76,6 @@ func (th *TestHarnass) Assert() bool {
 	// loop over all cases
 	for i, _case := range th.Cases {
 
-		// var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 		req, err := http.NewRequest(_case.Verb, _case.Url, nil)
 
 		for _, header := range _case.Headers {
@@ -95,8 +95,6 @@ func (th *TestHarnass) Assert() bool {
 			u, _ := url.Parse(_case.Url)
 			jar.SetCookies(u, cookies)
 			client.Jar = jar
-
-			fmt.Println(jar.Cookies(u))
 		}
 
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -108,6 +106,8 @@ func (th *TestHarnass) Assert() bool {
 			fmt.Printf("--- Result  : %s \n", body)
 			result = false
 			break
+		} else {
+			fmt.Printf("--- Correct result  : %s \n", body)
 		}
 	}
 	return result
@@ -127,77 +127,22 @@ func TestMain(m *testing.M) {
 }
 
 //Tests follow a pattern of loading the harnass and then testing assumptions.
-func TestFullConfig(t *testing.T) {
-	th := loadTestHarnass("TestFullConfig.json", t)
-	defer destroyTestHarnass(th)
+func TestAll(t *testing.T) {
 
-	time.Sleep(2000 * time.Millisecond)
+	files, _ := ioutil.ReadDir(TEST_FILES)
 
-	if !(th.Assert()) {
-		t.Error("Failed test: ", th.Name)
+	for _, file := range files {
+
+		th := loadTestHarnass(file.Name(), t)
+
+		if !(th.Assert()) {
+			t.Error("Failed test: ", th.Name)
+		}
+
+		destroyTestHarnass(th)
+
 	}
 }
-
-func TestAndroid(t *testing.T) {
-
-	th := loadTestHarnass("TestAndroid.json", t)
-	defer destroyTestHarnass(th)
-
-	time.Sleep(2000 * time.Millisecond)
-
-	if !(th.Assert()) {
-		t.Error("Failed test: ", th.Name)
-	}
-}
-
-func TestPercentageBasedRouting20(t *testing.T) {
-
-	th := loadTestHarnass("TestPercentageBasedRouting20.json", t)
-	defer destroyTestHarnass(th)
-
-	time.Sleep(5000 * time.Millisecond)
-
-	if !(th.Assert()) {
-		t.Error("Failed test: ", th.Name)
-	}
-
-}
-
-func TestPercentageBasedRouting50(t *testing.T) {
-
-	th := loadTestHarnass("TestPercentageBasedRouting50.json", t)
-	defer destroyTestHarnass(th)
-
-	time.Sleep(5000 * time.Millisecond)
-
-	if !(th.Assert()) {
-		t.Error("Failed test: ", th.Name)
-	}
-}
-
-// func TestPercentageBasedRouting33(t *testing.T) {
-
-// 	th := loadTestHarnass("TestPercentageBasedRouting33.json", t)
-// 	defer destroyTestHarnass(th)
-
-// 	time.Sleep(2000 * time.Millisecond)
-
-// 	if !(th.Assert()) {
-// 		t.Error("Failed test: ", th.Name)
-// 	}
-
-// }
-
-// func TestSimpleCookieAffinity(t *testing.T) {
-
-// 	th := loadTestHarnass("TestSimpleCookieAffinity.json", t)
-// 	defer destroyTestHarnass(th)
-
-// 	if !(th.Assert()) {
-// 		t.Error("Failed test: ", th.Name)
-// 	}
-
-// }
 
 func setup() {
 
@@ -228,17 +173,44 @@ func runDocker(c *Container, wg *sync.WaitGroup) {
 
 	Docker := exec.Command("docker", "run", "-d", name, "-p", portMap, c.Image, c.Parameters)
 	_ = Docker.Run()
+
+	// check if Docker container has started
+	for {
+
+		time.Sleep(1000 * time.Millisecond)
+
+		if resp, _ := http.Get("http://" + DOCKER_HOST + ":" + strconv.Itoa(c.OutPort) + "/ping"); resp.StatusCode == 200 {
+			fmt.Printf("--- Container %s is running\n", c.Name)
+			break
+		}
+	}
+
 }
 
 func stopDocker(c *Container, wg *sync.WaitGroup) {
 
+	defer wg.Done()
+
 	DockerStop := exec.Command("docker", "stop", c.Name)
 	_ = DockerStop.Run()
 
-	DockerRm := exec.Command("docker", "rm", c.Name)
-	_ = DockerRm.Run()
+	for {
+		DockerCheck := exec.Command("docker", "inspect", "-f", "{{.State.Running}}", c.Name)
+		out, err := DockerCheck.Output()
 
-	wg.Done()
+		if err != nil {
+			panic(err.Error())
+		}
+
+		if string(bytes.TrimRight(out, "\n")) == "false" {
+			DockerRm := exec.Command("docker", "rm", c.Name)
+			_ = DockerRm.Run()
+			break
+		}
+		time.Sleep(1000 * time.Millisecond)
+
+	}
+
 }
 
 func loadTestHarnass(file string, t *testing.T) *TestHarnass {
@@ -278,9 +250,11 @@ func loadTestHarnass(file string, t *testing.T) *TestHarnass {
 		t.Errorf("Failed to load test harnass: %s", err.Error())
 	}
 
-	if _, err := http.Post("http://localhost:10001/v1/config", "application/json", bytes.NewBuffer(config)); err != nil {
+	if resp, err := http.Post("http://localhost:10001/v1/config", "application/json", bytes.NewBuffer(config)); err != nil || resp.StatusCode != 201 {
 		t.Errorf("Failed to load test harnass: %s", err.Error())
 	}
+
+	time.Sleep(4000 * time.Millisecond)
 
 	return th
 }

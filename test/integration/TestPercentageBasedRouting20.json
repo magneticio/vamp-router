@@ -84,7 +84,7 @@
                 ],
                 "services": [
                     {
-                        "name": "service_a",
+                        "name": "service_a1",
                         "weight": 20,
                         "servers": [
                             {
@@ -95,7 +95,7 @@
                         ]
                     },
                     {
-                        "name": "service_b",
+                        "name": "service_b1",
                         "weight": 20,
                         "servers": [
                             {
@@ -106,7 +106,7 @@
                         ]
                     },
                     {
-                        "name": "service_c",
+                        "name": "service_c1",
                         "weight": 20,
                         "servers": [
                             {
@@ -117,7 +117,7 @@
                         ]
                     },
                     {
-                        "name": "service_d",
+                        "name": "service_d1",
                         "weight": 20,
                         "servers": [
                             {
@@ -128,7 +128,7 @@
                         ]
                     },
                     {
-                        "name": "service_e",
+                        "name": "service_e1",
                         "weight": 20,
                         "servers": [
                             {

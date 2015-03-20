@@ -29,7 +29,7 @@ var (
 	pidFilePath      string
 	headless         bool
 	log              *gologger.Logger
-	version          = "0.6.0"
+	version          = "0.7.0-RC1"
 	stream           metrics.Streamer
 	workDir          helpers.WorkDir
 	customWorkDir    string

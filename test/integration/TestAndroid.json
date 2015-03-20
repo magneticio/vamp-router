@@ -1,5 +1,6 @@
 {
-    "name": "Test Filter on Android User-Agent",
+    "name": "Test Android split",
+    "useCookies" : false,
     "cases": [
         {
             "url": "http://localhost:8000/version",
@@ -11,7 +12,18 @@
                 }
             ],
             "expect": "b"
-        }
+        },
+        {
+            "url": "http://localhost:8000/version",
+            "verb": "GET",
+            "headers": [
+                {
+                    "key": "User-Agent",
+                    "value": "Mozilla/5.0 (Linux; U; Android 4.0; en-us; GT-I9300 Build/IMM76D)"
+                }
+            ],
+            "expect": "b"
+        }              
     ],
     "containers": [
         {
