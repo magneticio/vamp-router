@@ -104,14 +104,16 @@ func (c *Config) DeleteRoute(name string) *Error {
 
 		if route.Name == name {
 
-			// first remove all the frontends and backends related to the services
+			// first remove the single frontend, getting rid of filters and other pointers to backends
+			c.DeleteFrontend(route.Name)
+
+			// then remove all the frontends and backends related to the services
 			for _, service := range route.Services {
 				c.DeleteFrontend(FrontendName(route.Name, service.Name))
 				c.DeleteBackend(BackendName(route.Name, service.Name))
 			}
 
-			// then remove the single backend and frontend
-			c.DeleteFrontend(route.Name)
+			// then remove the single backend
 			c.DeleteBackend(route.Name)
 
 			c.Routes = append(c.Routes[:i], c.Routes[i+1:]...)

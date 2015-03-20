@@ -345,7 +345,8 @@ func (c *Config) BackendExists(name string) bool {
 	return false
 }
 
-// helper function to check if a Backend is used by a Frontend as a default backend or a filter destination
+/*	Helper function to check if a Backend is used by a Frontend as a default backend or a filter destination
+ */
 func (c *Config) BackendUsed(name string) *Error {
 
 	if c.BackendExists(name) {
