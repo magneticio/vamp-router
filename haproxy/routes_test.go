@@ -135,8 +135,8 @@ func TestConfiguration_UpdateRouteServices(t *testing.T) {
 	var services []*Service
 	_ = json.Unmarshal(j, &services)
 
-	if err := haConfig.UpdateRouteServices("test_route_2", services); err != nil {
-		t.Errorf(err.Error())
+	if err := haConfig.UpdateRouteServices("test_route_2", services); err == nil {
+		t.Errorf("Implicitly deleting a set of services that are still referenced by filters should fail")
 	}
 
 }
