@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -133,14 +134,15 @@ func TestAll(t *testing.T) {
 
 	for _, file := range files {
 
-		th := loadTestHarnass(file.Name(), t)
+		if strings.HasSuffix(file.Name(), ".json") {
+			th := loadTestHarnass(file.Name(), t)
 
-		if !(th.Assert()) {
-			t.Error("Failed test: ", th.Name)
+			if !(th.Assert()) {
+				t.Error("Failed test: ", th.Name)
+			}
+
+			destroyTestHarnass(th)
 		}
-
-		destroyTestHarnass(th)
-
 	}
 }
 
