@@ -1,5 +1,4 @@
 angular.module('vampLoadbalancer', [
-  'ngTable',
   'ngResource',
   'vampLoadbalancer.controllers'
 ]);
