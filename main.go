@@ -137,7 +137,7 @@ func main() {
 	log.Notice("Initializing metric streams...")
 
 	// Initialize the stream from a runtime
-	stream.Init(&haRuntime, 3000)
+	stream.Init(&haRuntime, 3000, log)
 
 	// Setup Kafka if required
 	if len(kafkaHost) > 0 {
