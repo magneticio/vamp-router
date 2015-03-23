@@ -121,7 +121,7 @@ func (c *Config) DeleteFrontend(name string) *Error {
 			return nil
 		}
 	}
-	return &Error{404, errors.New("no frontend found")}
+	return nil
 }
 
 // get the filters from a frontend
@@ -162,7 +162,7 @@ func (c *Config) DeleteFilter(frontendName string, filterName string) *Error {
 			}
 		}
 	}
-	return &Error{404, errors.New("No filter found")}
+	return nil
 }
 
 // gets a backend
@@ -216,7 +216,7 @@ func (c *Config) DeleteBackend(name string) *Error {
 			return nil
 		}
 	}
-	return &Error{404, errors.New("no backend found")}
+	return nil
 }
 
 // gets all servers of a specific backend
@@ -275,7 +275,7 @@ func (c *Config) DeleteServer(backendName string, serverName string) *Error {
 			}
 		}
 	}
-	return &Error{404, errors.New("no such server found")}
+	return nil
 }
 
 // Render a config object to a HAproxy config file

@@ -99,7 +99,7 @@ func TestConfiguration_DeleteFrontend(t *testing.T) {
 		t.Errorf("Failed to remove frontend")
 	}
 
-	if err := haConfig.DeleteFrontend("non_existing_frontend"); err == nil {
+	if err := haConfig.DeleteFrontend("non_existing_frontend"); err != nil {
 		t.Errorf("Frontend should not be removed")
 	}
 }
@@ -130,7 +130,7 @@ func TestConfiguration_DeleteFilter(t *testing.T) {
 		t.Errorf("Could not add filter")
 	}
 
-	if err := haConfig.DeleteFilter("test_fe_1", "non_existent_filter"); err == nil {
+	if err := haConfig.DeleteFilter("test_fe_1", "non_existent_filter"); err != nil {
 		t.Errorf("Should return error on non existent filter")
 	}
 }
@@ -194,7 +194,7 @@ func TestConfiguration_DeleteBackend(t *testing.T) {
 		t.Errorf("Could not delete backend that should be deletable")
 	}
 
-	if err := haConfig.DeleteBackend("non_existing_backend"); err == nil {
+	if err := haConfig.DeleteBackend("non_existing_backend"); err != nil {
 		t.Errorf("Backend should not be removed")
 	}
 }
@@ -254,8 +254,8 @@ func TestConfiguration_DeleteServer(t *testing.T) {
 		t.Errorf("Failed to delete server")
 	}
 
-	if err := haConfig.DeleteServer("test_be_1", "non_existent_server"); err == nil {
-		t.Errorf("Should return false on non existent server")
+	if err := haConfig.DeleteServer("test_be_1", "non_existent_server"); err != nil {
+		t.Errorf("Should return nil on non existent server")
 	}
 }
 

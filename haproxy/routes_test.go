@@ -171,11 +171,11 @@ func TestConfiguration_DeleteRouteService(t *testing.T) {
 		t.Errorf("Failed to delete route")
 	}
 
-	if haConfig.DeleteRouteService("non_existent_route", "service_a") == nil {
+	if haConfig.DeleteRouteService("non_existent_route", "service_a") != nil {
 		t.Errorf("Should return nil on non existent route")
 	}
 
-	if haConfig.DeleteRouteService(route, "non_existent_service") == nil {
+	if haConfig.DeleteRouteService(route, "non_existent_service") != nil {
 		t.Errorf("Should return nil on non existent service")
 	}
 }
@@ -254,7 +254,7 @@ func TestConfiguration_DeleteServiceServer(t *testing.T) {
 		t.Errorf("Failed to delete server")
 	}
 
-	if err := haConfig.DeleteServiceServer(route, service, "non_existent_server"); err == nil {
+	if err := haConfig.DeleteServiceServer(route, service, "non_existent_server"); err != nil {
 		t.Errorf("Should return nil on non existent server")
 	}
 }
@@ -285,7 +285,7 @@ func TestConfiguration_DeleteRoute(t *testing.T) {
 		t.Errorf("Failed to delete route")
 	}
 
-	if err := haConfig.DeleteRoute("non_existent_route"); err == nil {
+	if err := haConfig.DeleteRoute("non_existent_route"); err != nil {
 		t.Errorf("Should return nil on non existent route")
 	}
 }

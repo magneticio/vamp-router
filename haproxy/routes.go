@@ -125,7 +125,7 @@ func (c *Config) DeleteRoute(name string) *Error {
 			return nil
 		}
 	}
-	return &Error{404, errors.New("no  route found")}
+	return nil
 }
 
 // just a convenience functions for a delete and a create
@@ -231,7 +231,7 @@ func (c *Config) DeleteRouteService(routeName string, serviceName string) *Error
 			}
 		}
 	}
-	return &Error{404, errors.New("")}
+	return nil
 }
 
 // just a convenience functions for a delete and a create
@@ -319,7 +319,7 @@ func (c *Config) DeleteServiceServer(routeName string, serviceName string, serve
 			}
 		}
 	}
-	return &Error{404, errors.New("no server found")}
+	return nil
 }
 
 func (c *Config) AddServiceServer(routeName string, serviceName string, server *Server) *Error {
