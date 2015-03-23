@@ -61,7 +61,7 @@ func PostRoute(c *gin.Context) {
 	var route haproxy.Route
 
 	if c.Bind(&route) {
-		if err := Config(c).AddRoute(&route); err != nil {
+		if err := Config(c).AddRoute(route); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created route"})

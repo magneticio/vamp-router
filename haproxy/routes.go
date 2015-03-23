@@ -2,6 +2,7 @@ package haproxy
 
 import (
 	"errors"
+	valid "github.com/asaskevich/govalidator"
 )
 
 const (
@@ -28,7 +29,11 @@ func (c *Config) GetRoute(name string) (*Route, *Error) {
 }
 
 // add a route to the configuration
-func (c *Config) AddRoute(route *Route) *Error {
+func (c *Config) AddRoute(route Route) *Error {
+
+	if valid, err := valid.ValidateStruct(route); valid != true {
+		return &Error{400, err}
+	}
 
 	if c.RouteExists(route.Name) {
 		return &Error{409, errors.New("route already exists")}
@@ -48,7 +53,7 @@ func (c *Config) AddRoute(route *Route) *Error {
 	beSlice = append(beSlice, stableBackend)
 
 	// 4. As an extra step, we need to replace the destination in any filters with the full backend name
-	resolvedFilters := c.resolveFilters(route)
+	resolvedFilters := c.resolveFilters(&route)
 
 	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, resolvedFilters, stableBackend)
 	feSlice = append(feSlice, stableFrontend)
@@ -92,7 +97,7 @@ func (c *Config) AddRoute(route *Route) *Error {
 		c.Backends = append(c.Backends, be)
 	}
 
-	c.Routes = append(c.Routes, route)
+	c.Routes = append(c.Routes, &route)
 	return nil
 }
 
@@ -130,7 +135,7 @@ func (c *Config) UpdateRoute(name string, route *Route) *Error {
 		return &Error{err.Code, err}
 	}
 
-	if err := c.AddRoute(route); err != nil {
+	if err := c.AddRoute(*route); err != nil {
 		return &Error{err.Code, err}
 	}
 	return nil

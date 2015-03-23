@@ -1,5 +1,13 @@
 package haproxy
 
+import (
+	"github.com/magneticio/vamp-router/tools"
+)
+
+const (
+	MAX_SOCKET_LENGTH = 103
+)
+
 // creates a Frontend object
 func (c *Config) frontendFactory(name string, mode string, port int, filter []*Filter, backend *Backend) *Frontend {
 
@@ -60,14 +68,23 @@ func (c *Config) socketFrontendFactory(name string, mode string, socket string, 
 
 // creates a ServerDetail object that sends traffic to a Unix socket
 func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
+
 	return &ServerDetail{
 		Name:          name,
 		Host:          "",
 		Port:          0,
-		UnixSock:      c.WorkingDir + "/sockets/" + "server." + name + ".sock",
+		UnixSock:      compileSocketName(c.WorkingDir+"/sockets/", name, ".sock"),
 		Weight:        weight,
 		MaxConn:       1000,
 		Check:         false,
 		CheckInterval: 10,
 	}
+}
+
+func compileSocketName(prefix string, base string, postfix string) string {
+
+	if len(base) == 0 {
+		return (prefix + tools.GetMD5Hash(tools.GetUUID()) + postfix)
+	}
+	return (prefix + tools.GetMD5Hash(base) + postfix)
 }

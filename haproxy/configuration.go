@@ -3,6 +3,7 @@ package haproxy
 import (
 	"encoding/json"
 	"errors"
+	valid "github.com/asaskevich/govalidator"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -79,7 +80,7 @@ func (c *Config) UpdateConfig(config *Config) *Error {
 	c.Routes = []*Route{}
 
 	for _, route := range config.Routes {
-		if err := c.AddRoute(route); err != nil {
+		if err := c.AddRoute(*route); err != nil {
 			return err
 		}
 	}
@@ -186,6 +187,10 @@ func (c *Config) GetBackends() []*Backend {
 // adds a frontend
 func (c *Config) AddBackend(backend *Backend) *Error {
 
+	if _, err := valid.ValidateStruct(backend); err != nil {
+		return &Error{400, err}
+	}
+
 	if c.BackendExists(backend.Name) {
 		return &Error{409, errors.New("backend already exists")}
 	}
@@ -245,6 +250,10 @@ func (c *Config) GetServer(backendName string, serverName string) (*ServerDetail
 
 // adds a Server
 func (c *Config) AddServer(backendName string, server *ServerDetail) *Error {
+
+	if _, err := valid.ValidateStruct(server); err != nil {
+		return &Error{400, err}
+	}
 
 	for _, be := range c.Backends {
 		if be.Name == backendName {

@@ -43,16 +43,38 @@ func TestConfiguration_AddRoute(t *testing.T) {
 	var route *Route
 	_ = json.Unmarshal(j, &route)
 
-	if haConfig.AddRoute(route) != nil {
+	if haConfig.AddRoute(*route) != nil {
 		t.Errorf("Failed to add route")
 	}
 
-	if haConfig.AddRoute(route) == nil {
+	if haConfig.AddRoute(*route) == nil {
 		t.Errorf("Adding should fail when a route already exists")
 	}
+
+	illegal_names := []string{
+		"name_with_illegal_char_%",
+		"_name_with_illegal_start",
+		"SomeMore%\\.Stuff",
+		"a_much_too_long_name_that_is_actually_valid_with_regard_to_chars_",
+		"zz",
+		"lDTGtINpuhUNGhltJZIGJ5hIK5H4HAXp79XTmWOwz68lyFa8nQzb8AFzzLygkL4HD",
+	}
+
+	for _, name := range illegal_names {
+		var newRoute *Route
+		_ = json.Unmarshal(j, &newRoute)
+		newRoute.Name = name
+
+		if err := haConfig.AddRoute(*newRoute); err == nil {
+			t.Errorf("Adding should fail using a non-valid name %s:", name)
+		}
+
+	}
+
 }
 
 func TestConfiguration_UpdateRoute(t *testing.T) {
+
 	j, _ := ioutil.ReadFile(ROUTE_JSON)
 	var route *Route
 	if err := json.Unmarshal(j, &route); err != nil {

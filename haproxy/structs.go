@@ -30,7 +30,7 @@ import (
   All items in a route map to actual Haproxy types from the vamp-loadbalancer/haproxy package.
 */
 type Route struct {
-	Name      string     `json:"name" binding:"required"`
+	Name      string     `json:"name" binding:"required" valid:"routeName"`
 	Port      int        `json:"port" binding:"required"`
 	Protocol  string     `json:"protocol" binding:"required"`
 	HttpQuota Quota      `json:"httpQuota"`
@@ -67,7 +67,7 @@ type ServerDetail struct {
 	Name          string `json:"name" binding:"required"`
 	Host          string `json:"host" binding:"required"`
 	Port          int    `json:"port" binding:"required"`
-	UnixSock      string `json:"unixSock"`
+	UnixSock      string `json:"unixSock" valid:"socketPath"`
 	Weight        int    `json:"weight" binding:"required"`
 	MaxConn       int    `json:"maxconn"`
 	Check         bool   `json:"check"`

@@ -175,8 +175,8 @@ func TestConfiguration_AddBackend(t *testing.T) {
 	var backend *Backend
 	_ = json.Unmarshal(j, &backend)
 
-	if haConfig.AddBackend(backend) != nil {
-		t.Errorf("Failed to add Backend")
+	if err := haConfig.AddBackend(backend); err != nil {
+		t.Errorf("Failed to add Backend: %s", err.Error())
 	}
 
 	if haConfig.AddBackend(backend) == nil {
