@@ -83,8 +83,8 @@ func TestConfiguration_AddFrontend(t *testing.T) {
 	if err := haConfig.AddFrontend(&fe); err != nil {
 		t.Errorf("Failed to add frontend")
 	} else {
-		if err := haConfig.AddFrontend(&fe); err == nil {
-			t.Errorf("Should return error on already existing frontend")
+		if err := haConfig.AddFrontend(&fe); err != nil {
+			t.Errorf("Should return nil on already existing frontend")
 		}
 
 	}
@@ -179,8 +179,8 @@ func TestConfiguration_AddBackend(t *testing.T) {
 		t.Errorf("Failed to add Backend: %s", err.Error())
 	}
 
-	if haConfig.AddBackend(backend) == nil {
-		t.Errorf("Adding should fail when a backend already exists")
+	if haConfig.AddBackend(backend) != nil {
+		t.Errorf("Should return nil on already existing backend")
 	}
 }
 

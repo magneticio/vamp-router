@@ -47,8 +47,8 @@ func TestConfiguration_AddRoute(t *testing.T) {
 		t.Errorf("Failed to add route")
 	}
 
-	if haConfig.AddRoute(*route) == nil {
-		t.Errorf("Adding should fail when a route already exists")
+	if haConfig.AddRoute(*route) != nil {
+		t.Errorf("Adding should not fail when a route already exists")
 	}
 
 	illegal_names := []string{
@@ -128,8 +128,8 @@ func TestConfiguration_AddRouteServices(t *testing.T) {
 		t.Errorf("Failed to add route")
 	}
 
-	if haConfig.AddRouteServices(route, services) == nil {
-		t.Errorf("Adding should fail when a service already exists")
+	if haConfig.AddRouteServices(route, services) != nil {
+		t.Errorf("Should return nil on already existing service")
 	}
 
 	if haConfig.AddRouteServices("non_existent_service", services) == nil {
@@ -225,8 +225,8 @@ func TestConfiguration_AddServiceServer(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	if err := haConfig.AddServiceServer(route, service, &server); err == nil {
-		t.Errorf("Adding should fail when a server already exists")
+	if err := haConfig.AddServiceServer(route, service, &server); err != nil {
+		t.Errorf("Should return nil on already existing server")
 	}
 
 	if err := haConfig.AddServiceServer(route, "non_existent_service", &server); err == nil {
@@ -238,8 +238,8 @@ func TestConfiguration_AddServiceServer(t *testing.T) {
 	}
 
 	server.Name = "paas.55f73f0d-6087-4964-a70e-b1ca1d5b24cd"
-	if err := haConfig.AddServiceServer(route, service, &server); err == nil {
-		t.Errorf("Should return error on trying to create an already existing server")
+	if err := haConfig.AddServiceServer(route, service, &server); err != nil {
+		t.Errorf("Should return nil on already existing server")
 	}
 
 }

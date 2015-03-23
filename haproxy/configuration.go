@@ -105,7 +105,7 @@ func (c *Config) GetFrontend(name string) (*Frontend, *Error) {
 func (c *Config) AddFrontend(frontend *Frontend) *Error {
 
 	if c.FrontendExists(frontend.Name) {
-		return &Error{409, errors.New("frontend already exists")}
+		return nil
 	}
 
 	c.Frontends = append(c.Frontends, frontend)
@@ -192,7 +192,7 @@ func (c *Config) AddBackend(backend *Backend) *Error {
 	}
 
 	if c.BackendExists(backend.Name) {
-		return &Error{409, errors.New("backend already exists")}
+		return nil
 	}
 
 	c.Backends = append(c.Backends, backend)

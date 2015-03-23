@@ -31,12 +31,12 @@ func (c *Config) GetRoute(name string) (*Route, *Error) {
 // add a route to the configuration
 func (c *Config) AddRoute(route Route) *Error {
 
-	if valid, err := valid.ValidateStruct(route); valid != true {
-		return &Error{400, err}
+	if c.RouteExists(route.Name) {
+		return nil
 	}
 
-	if c.RouteExists(route.Name) {
-		return &Error{409, errors.New("route already exists")}
+	if valid, err := valid.ValidateStruct(route); valid != true {
+		return &Error{400, err}
 	}
 
 	// create some slices for all the stuff we are going to create. These are just holders so we can
@@ -173,8 +173,7 @@ func (c *Config) AddRouteServices(routeName string, services []*Service) *Error 
 
 	for _, service := range services {
 		if c.ServiceExists(routeName, service.Name) {
-			msg := "this service already exists: " + service.Name
-			return &Error{409, errors.New(msg)}
+			return nil
 		}
 	}
 
@@ -325,7 +324,7 @@ func (c *Config) DeleteServiceServer(routeName string, serviceName string, serve
 func (c *Config) AddServiceServer(routeName string, serviceName string, server *Server) *Error {
 
 	if c.ServerExists(routeName, serviceName, server.Name) {
-		return &Error{409, errors.New("server already exists")}
+		return nil
 	}
 
 	for _, route := range c.Routes {
