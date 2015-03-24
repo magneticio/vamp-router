@@ -52,14 +52,23 @@ func (s *Streamer) Start() error {
 		for _, proxy := range stats {
 
 			// filter out the metrics for haproxy's own stats page
-			if proxy.Pxname != "stats" {
+			if proxy.Pxname != "stats" && proxy.Pxname != "abusers" {
 
 				// loop over all wanted metrics for the current proxy
 				for _, metric := range s.wantedMetrics {
 
 					// compile tags
 					proxies := strings.Split(proxy.Pxname, ".")
+
+					/* we add a specific "route" tag (that doesn't exist in the standard haproxy stats) to
+					all "top-level" frontend and backends. We check when to insert this by the length of the
+					proxies slice after splitting. One item equals a route.
+					*/
 					tags := append(proxies, []string{strings.ToLower(proxy.Svname), strings.ToLower(metric)}...)
+
+					if len(proxies) == 1 && (proxy.Svname == "BACKEND" || proxy.Svname == "FRONTEND") {
+						tags = append(tags, "route")
+					}
 					field := reflect.ValueOf(proxy).FieldByName(metric).String()
 					if field != "" {
 
