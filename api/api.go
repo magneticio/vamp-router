@@ -17,13 +17,9 @@ func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haprox
 	r.Use(HaproxyMiddleware(haConfig, haRuntime))
 	r.Use(LoggerMiddleware(log))
 	r.Use(gin.Recovery())
-	r.Static("/www", "./www")
 	v1 := r.Group("/v1")
 
 	{
-		r.GET("/", func(c *gin.Context) {
-			c.Redirect(301, "www/index.html")
-		})
 
 		/*
 		   Frontend
