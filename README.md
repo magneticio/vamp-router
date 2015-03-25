@@ -466,7 +466,7 @@ Compile the application
 
 Integration tests require a functioning local Docker installation and Haproxy. Run the integration test suite as follows:
 
-  $ go test -tags integration -v --customWorkDir=/tmp/vamp_integration_test --headless=true
+    $ go test -tags integration -v --customWorkDir=/tmp/vamp_integration_test --headless=true
 
 The `--customWorkDir` flag makes sure you will not overwrite or delete any previous settings as the test runner will delete
 this direcory at the end. The `--headless` flag will ensure only the test code outputs to the console.
