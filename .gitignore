@@ -10,7 +10,7 @@ _obj
 _test
 _workspace
 target/linux_i386/vamp-router
-
+target/dist
 
 # Architecture specific extensions/prefixes
 *.[568vq]

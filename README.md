@@ -13,7 +13,7 @@ Vamp-router's features are:
 -   Adjust server weight
 -   Get statistics on frontends, backends and servers
 -   Stream statistics over SSE or Kafka
--   Set ACL's *(experimental)*
+-   Set ACL's with short codes *(experimental)*
 -   Set HTTP & TCP Spike limiting *(experimental)*
 
 
@@ -178,6 +178,98 @@ Updating the weight of the services can be done by using a `PUT` request to the 
       ]
     }
 
+### Route filters
+
+Filters on routes provide some convenient higher abstractions and "shortcodes" for setting up (groups 
+of) conditions on how to route the traffic flowing into a route.
+
+Let's look at a typical filter:
+
+    {
+      "name": "uses_internet_explorer",
+      "condition": "user-agent = Android",
+      "destination": "service_b"
+    }
+
+This piece of json does three things:
+
+1) it give the filter a name, which is compulsory.
+2) is uses a short code `user-agent = Android` to match all User-Agent headers that have the word 
+`Android` in them.
+3) it send the traffic that matches the condition to service `service_b`
+
+
+Short codes are human readable condition that are translated to the more opaque HAproxy ACL's.
+The following are all equivalent:
+
+    hdr_sub(user-agent) 
+    user-agent=Android
+    User-Agent=Android
+    user-agent = Android
+
+Currently available are:
+
+    User-Agent = *string*
+    Host = *string*
+    Cookie *cookie name* Contains *string*
+    Has Cookie *cookie name*
+    Misses Cookie *cookie name*
+    Header *header name* Contains *string*
+    Has Header *header name*
+    Misses Header *header name*
+
+#### Route filters vs. ACL's
+
+If no short code is found, the filter's condition is just treated as an ACL. This means you can always
+just use HAproxy ACL's in routes as well as in frontends.
+
+The example below will route all Internet Explorer users to a different backend. You can update this on the fly
+without loosing sessions or causing errors due to Haproxy's smart restart mechanisms.
+
+    {
+        "frontends" : [
+            {
+                "name" : "test_fe_1",                               # declare a frontend
+                ...                                                 # some stuff left out for brevity
+                "acls" : [
+                    {
+                        "name" : "uses_msie",                       # set an ACL by giving it a name and some pattern. 
+                        "backend" : "testbe2",                      # set the backend to send traffic to
+                        "pattern" : "hdr_sub(user-agent) MSIE"      # This pattern matches all HTTP requests  that have
+                    }                                               # "MSIE" in their User-Agent header                 
+
+                ]
+            }
+        ]
+    }    
+
+
+    
+### Rate / Spike limiting 
+
+You can set limits on specific connection rates for HTTP and TCP traffic. This comes in handy if you want to protect
+yourself from abusive users or other spikes. The rates are calculated over a specific time range. The example below
+tracks the TCP connection rate over 30 seconds. If more than 200 new connections are made in this time period, the 
+client receives an 503 error and goes into a "cooldown" period for 60 seconds (`expiryTime`)
+
+    {
+        "frontends" : [
+            {
+                "name" : "test_fe_1",
+                ... 
+                "httpSpikeLimit" : {
+                    "sampleTime" : "30s",
+                    "expiryTime" : "60s",
+                    "rate" : 50
+                },
+                "tcpSpikeLimit" : {
+                    "sampleTime" : "30s",
+                    "expiryTime" : "60s",
+                    "rate" : 200
+            }
+    }
+
+Note: the time format used, i.e. `30s`, is the default Haproxy time format. More details [here](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#2.2)
 
 ## Frontends
 
@@ -205,58 +297,9 @@ coming over the socket. On this example we declare the Haproxy specific `proxy` 
         "unixSock" : "/tmp/vamp_testbe2_1.sock",
         "sockProtocol" : "accept-proxy"
     }
-    
-### Setting ACL's
-    
-You can set ACLs as part of a frontend's configuration and use these ACLs to route traffic to different backends.
-The example below will route all Internet Explorer users to a different backend. You can update this on the fly
-without loosing sessions or causing errors due to Haproxy's smart restart mechanisms.
 
-    {
-        "frontends" : [
-            {
-                "name" : "test_fe_1",                               # declare a frontend
-                ...                                                 # some stuff left out for brevity
-                "acls" : [
-                    {
-                        "name" : "uses_msie",                       # set an ACL by giving it a name and some pattern. 
-                        "backend" : "testbe2",                      # set the backend to send traffic to
-                        "pattern" : "hdr_sub(user-agent) MSIE"      # This pattern matches all HTTP requests that have
-                    }                                               # "MSIE" in their User-Agent header                 
-
-                ]
-            }
-        ]
-    }
-
-### Rate / Spike limiting 
-
-You can set limits on specific connection rates for HTTP and TCP traffic. This comes in handy if you want to protect
-yourself from abusive users or other spikes. The rates are calculated over a specific time range. The example below
-tracks the TCP connection rate over 30 seconds. If more than 200 new connections are made in this time period, the 
-client receives an 503 error and goes into a "cooldown" period for 60 seconds (`expiryTime`)
-
-    {
-        "frontends" : [
-            {
-                "name" : "test_fe_1",
-                ... 
-                "httpSpikeLimit" : {
-                    "sampleTime" : "30s",
-                    "expiryTime" : "60s",
-                    "rate" : 50
-                },
-                "tcpSpikeLimit" : {
-                    "sampleTime" : "30s",
-                    "expiryTime" : "60s",
-                    "rate" : 200
-            }
-    }
-
-Note: the time format used, i.e. `30s`, is the default Haproxy time format. More details [here](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#2.2)
 
 ## Setting Backends and servers
-
 
 More info to follow. _Note_: You can point servers to standard IP + port pairs or to Unix sockets.
 Here are some examples:

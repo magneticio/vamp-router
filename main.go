@@ -99,12 +99,10 @@ func main() {
 	log.Notice("Attempting to load config at %s", workDir.Dir()+configFilePath)
 	// load config from disk
 	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
+
 	if err != nil {
-		log.Notice("Did not find a config, loading example config...")
-		err = haConfig.GetConfigFromDisk("examples/example1.json")
-		if err != nil {
-			log.Warning("Could not load example file from disk...")
-		}
+		log.Notice("Did not find a config...initialzing empty config")
+		haConfig.InitializeConfig()
 	}
 
 	// Render initial config
