@@ -52,7 +52,7 @@
                 "filters": [
                     {
                         "name": "uses_android",
-                        "condition": "hdr_sub(user-agent) Android",
+                        "condition": "User-Agent = Android",
                         "destination": "service_b"
                     }
                 ],

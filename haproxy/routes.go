@@ -2,7 +2,6 @@ package haproxy
 
 import (
 	"errors"
-	valid "github.com/asaskevich/govalidator"
 )
 
 const (
@@ -10,14 +9,14 @@ const (
 )
 
 // gets all routes
-func (c *Config) GetRoutes() []*Route {
+func (c *Config) GetRoutes() []Route {
 	return c.Routes
 }
 
 // gets a route
-func (c *Config) GetRoute(name string) (*Route, *Error) {
+func (c *Config) GetRoute(name string) (Route, *Error) {
 
-	var route *Route
+	var route Route
 
 	for _, rt := range c.Routes {
 		if rt.Name == name {
@@ -35,7 +34,7 @@ func (c *Config) AddRoute(route Route) *Error {
 		return nil
 	}
 
-	if valid, err := valid.ValidateStruct(route); valid != true {
+	if valid, err := Validate(route); valid != true {
 		return &Error{400, err}
 	}
 
@@ -53,7 +52,11 @@ func (c *Config) AddRoute(route Route) *Error {
 	beSlice = append(beSlice, stableBackend)
 
 	// 4. As an extra step, we need to replace the destination in any filters with the full backend name
-	resolvedFilters := c.resolveFilters(&route)
+	//    and parse the filter short codes to proper Haproxy ACL conditions.
+	resolvedFilters, err := resolveFilters(&route)
+	if err != nil {
+		return &Error{400, err}
+	}
 
 	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, resolvedFilters, stableBackend)
 	feSlice = append(feSlice, stableFrontend)
@@ -97,7 +100,7 @@ func (c *Config) AddRoute(route Route) *Error {
 		c.Backends = append(c.Backends, be)
 	}
 
-	c.Routes = append(c.Routes, &route)
+	c.Routes = append(c.Routes, route)
 	return nil
 }
 
@@ -353,15 +356,4 @@ func (c *Config) UpdateServiceServer(routeName string, serviceName string, serve
 		return err
 	}
 	return nil
-}
-
-// a convenience function for setting the correct, full backend names in filters
-func (c *Config) resolveFilters(route *Route) []*Filter {
-
-	var resolvedFilters []*Filter
-	for _, filter := range route.Filters {
-		filter.Destination = (route.Name + "." + filter.Destination)
-		resolvedFilters = append(resolvedFilters, filter)
-	}
-	return resolvedFilters
 }

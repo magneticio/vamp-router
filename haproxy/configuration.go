@@ -3,7 +3,6 @@ package haproxy
 import (
 	"encoding/json"
 	"errors"
-	valid "github.com/asaskevich/govalidator"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -22,6 +21,13 @@ func (c *Config) GetConfigFromDisk(file string) error {
 
 	c.Mutex = new(sync.RWMutex)
 	return nil
+}
+
+func (c *Config) InitializeConfig() {
+	c.Frontends = []*Frontend{}
+	c.Backends = []*Backend{}
+	c.Routes = []Route{}
+	c.Mutex = new(sync.RWMutex)
 }
 
 // updates the weight of a server of a specific backend with a new weight
@@ -69,21 +75,25 @@ func (c *Config) GetFrontends() []*Frontend {
 //updates the whole config in one go
 func (c *Config) UpdateConfig(config *Config) *Error {
 
-	// var frontends []*Frontend
-	// var backends []*Backend
+	/* we use a temporary config so we can bail out of any changes when validation
+	fails further down the line
+	*/
 
-	c.Frontends = config.Frontends
-	c.Backends = config.Backends
-
-	// clear out all routes, otherwise we cannot update any routes that already exist.
-
-	c.Routes = []*Route{}
+	tempConf := *c
+	tempConf.Routes = []Route{}
+	tempConf.Frontends = config.Frontends
+	tempConf.Backends = config.Backends
 
 	for _, route := range config.Routes {
-		if err := c.AddRoute(*route); err != nil {
+		if err := tempConf.AddRoute(route); err != nil {
 			return err
 		}
+
 	}
+
+	c.Frontends = tempConf.Frontends
+	c.Backends = tempConf.Backends
+	c.Routes = tempConf.Routes
 
 	return nil
 }
@@ -187,7 +197,7 @@ func (c *Config) GetBackends() []*Backend {
 // adds a frontend
 func (c *Config) AddBackend(backend *Backend) *Error {
 
-	if _, err := valid.ValidateStruct(backend); err != nil {
+	if _, err := Validate(backend); err != nil {
 		return &Error{400, err}
 	}
 
@@ -251,7 +261,7 @@ func (c *Config) GetServer(backendName string, serverName string) (*ServerDetail
 // adds a Server
 func (c *Config) AddServer(backendName string, server *ServerDetail) *Error {
 
-	if _, err := valid.ValidateStruct(server); err != nil {
+	if _, err := Validate(server); err != nil {
 		return &Error{400, err}
 	}
 

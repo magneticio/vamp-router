@@ -40,7 +40,7 @@ type Route struct {
 }
 
 type Filter struct {
-	Name        string `json:"name" binding:"required"`
+	Name        string `json:"name" binding:"required" valid:"filterName"`
 	Condition   string `json:"condition" binding:"required"`
 	Destination string `json:"destination" binding:"required"`
 }
@@ -83,7 +83,7 @@ type Runtime struct {
 type Config struct {
 	Frontends    []*Frontend   `json:"frontends" binding:"required"`
 	Backends     []*Backend    `json:"backends" binding:"required"`
-	Routes       []*Route      `json:"routes" binding:"required"`
+	Routes       []Route       `json:"routes" binding:"required"`
 	PidFile      string        `json:"-"`
 	Mutex        *sync.RWMutex `json:"-"`
 	TemplateFile string        `json:"-"`

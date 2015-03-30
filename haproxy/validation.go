@@ -20,6 +20,14 @@ func init() {
 		return routeName.MatchString(str)
 	})
 
+	// validation for route names. Should be ascii, alphanumeric but allowing - _ . : (dash, underscore, period, colon)
+	valid.TagMap["filterName"] = valid.Validator(func(str string) bool {
+
+		pattern := "^[a-zA-Z0-9]{1}[a-zA-Z0-9:.\\-_]{3,63}$"
+		routeName := regexp.MustCompile(pattern)
+		return routeName.MatchString(str)
+	})
+
 	// validation for full sockets paths. These cannot be longer than 103 characters.
 	valid.TagMap["socketPath"] = valid.Validator(func(str string) bool {
 
@@ -27,5 +35,9 @@ func init() {
 		socketPath := regexp.MustCompile(pattern)
 		return socketPath.MatchString(str)
 	})
+}
 
+// simple wrapper function to ease the validation
+func Validate(s interface{}) (bool, error) {
+	return valid.ValidateStruct(s)
 }

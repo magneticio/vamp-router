@@ -28,13 +28,28 @@ func TestConfiguration_GetConfigFromDisk(t *testing.T) {
 		t.Errorf("Failed to load configuration from disk")
 	}
 
-	// wait for https://github.com/magneticio/vamp/issues/119
-	// if haConfig.GetConfigFromDisk(CFG_WRONG_JSON) == nil {
-	// 	t.Errorf("Expected an error when loading malformend JSON")
-	// }
-
 	if haConfig.GetConfigFromDisk("/this_is_really_something_wrong") == nil {
 		t.Errorf("Expected an error when loading non existent path")
+	}
+
+}
+
+func TestConfiguration_UpdateConfig(t *testing.T) {
+
+	j, _ := ioutil.ReadFile(CFG_JSON)
+	var config *Config
+	if err := json.Unmarshal(j, &config); err != nil {
+		t.Errorf(err.Error())
+	}
+
+	config.Frontends[0].BindPort = 8001
+
+	if err := haConfig.UpdateConfig(config); err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if frontends := haConfig.GetFrontends(); frontends[0].BindPort != 8001 {
+		t.Errorf("Failed to update route")
 	}
 
 }
@@ -88,7 +103,7 @@ func TestConfiguration_AddFrontend(t *testing.T) {
 		}
 
 	}
-	if haConfig.Frontends[3].Name != "my_test_frontend" {
+	if result, _ := haConfig.GetFrontend("my_test_frontend"); result.Name != "my_test_frontend" {
 		t.Errorf("Failed to add frontend")
 	}
 }
