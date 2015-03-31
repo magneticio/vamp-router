@@ -1,6 +1,7 @@
 package haproxy
 
 import (
+	"github.com/magneticio/vamp-router/tools"
 	"regexp"
 	"strings"
 )
@@ -78,7 +79,7 @@ func parseFilterCondition(condition string) string {
 
 /*
 a convenience function for:
-1. Checking the validity of filter names
+1. Generating and/or hecking the validity of filter names.
 2. Setting the correct, full backend names in filters.
 4. Parsing the filter condition to HAproxy ACL conditions
 */
@@ -87,6 +88,11 @@ func resolveFilters(route *Route) ([]*Filter, *Error) {
 	var resolvedFilters []*Filter
 
 	for _, filter := range route.Filters {
+
+		// if the filter name is not give, just generate one
+		if len(filter.Name) == 0 {
+			filter.Name = tools.GetUUID()
+		}
 
 		filter.Destination = (route.Name + "." + filter.Destination)
 		filter, err := parseFilter(filter)
