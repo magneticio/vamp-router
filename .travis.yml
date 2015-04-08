@@ -4,3 +4,4 @@ go:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq haproxy
+  - sudo ln -s /usr/sbin/haproxy /usr/local/bin/haproxy
