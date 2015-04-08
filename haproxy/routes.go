@@ -53,7 +53,7 @@ func (c *Config) AddRoute(route Route) *Error {
 
 	// 4. As an extra step, we need to replace the destination in any filters with the full backend name
 	//    and parse the filter short codes to proper Haproxy ACL conditions.
-	resolvedFilters, err := resolveFilters(&route)
+	resolvedFilters, err := resolveFilters(route)
 	if err != nil {
 		return &Error{400, err}
 	}

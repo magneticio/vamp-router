@@ -13,6 +13,8 @@ const (
 
 func TestFilters_ParseFilter(t *testing.T) {
 
+	fakeRoute := "my_route"
+
 	j, _ := ioutil.ReadFile(FILTERS_CORRECT_JSON)
 	var filtersCorrect, filtersWrong []*Filter
 	_ = json.Unmarshal(j, &filtersCorrect)
@@ -21,13 +23,13 @@ func TestFilters_ParseFilter(t *testing.T) {
 	_ = json.Unmarshal(i, &filtersWrong)
 
 	for _, filter := range filtersCorrect {
-		if _, err := parseFilter(filter); err != nil {
+		if _, err := parseFilter(fakeRoute, filter); err != nil {
 			t.Errorf("Failed to correctly parse a filter %s", err.Error())
 		}
 	}
 
 	for _, filter := range filtersWrong {
-		if _, err := parseFilter(filter); err == nil {
+		if _, err := parseFilter(fakeRoute, filter); err == nil {
 			t.Errorf("Filter parsing should fail with incorrect filters")
 		}
 	}

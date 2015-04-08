@@ -79,23 +79,22 @@ func parseFilterCondition(condition string) string {
 
 /*
 a convenience function for:
-1. Generating and/or hecking the validity of filter names.
+1. Generating and/or checking the validity of filter names.
 2. Setting the correct, full backend names in filters.
 4. Parsing the filter condition to HAproxy ACL conditions
 */
-func resolveFilters(route *Route) ([]*Filter, *Error) {
+func resolveFilters(route Route) ([]*Filter, *Error) {
 
 	var resolvedFilters []*Filter
 
 	for _, filter := range route.Filters {
 
-		// if the filter name is not give, just generate one
+		// if the filter name is not given, just generate one
 		if len(filter.Name) == 0 {
 			filter.Name = tools.GetUUID()
 		}
 
-		filter.Destination = (route.Name + "." + filter.Destination)
-		filter, err := parseFilter(filter)
+		filter, err := parseFilter(route.Name, filter)
 
 		if err != nil {
 			return resolvedFilters, err
@@ -106,13 +105,14 @@ func resolveFilters(route *Route) ([]*Filter, *Error) {
 }
 
 // check the filter for validity regarding ACL specs and calls the short code parser
-func parseFilter(filter *Filter) (*Filter, *Error) {
+func parseFilter(routeName string, filter *Filter) (*Filter, *Error) {
 
 	if valid, err := Validate(filter); valid != true {
 		return filter, &Error{400, err}
 	}
 
-	acl := Filter{filter.Name, "", filter.Destination}
+	destination := routeName + "." + filter.Destination
+	acl := Filter{filter.Name, "", destination}
 
 	acl.Condition = parseFilterCondition(filter.Condition)
 	return &acl, nil
