@@ -8,6 +8,8 @@ before_install:
 script:
 #  go test -v ./...
 #after_success:
+  - sh "cd $HOME/gopath/src/github.com/magneticio/vamp-router"
+  - sh "ls -al"
   - sh "./build_distro.sh 386"
 cache: apt
 notifications:
