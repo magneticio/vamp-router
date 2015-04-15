@@ -6,7 +6,7 @@ import (
 
 const (
 	MAC_HAPROXY_BIN_LOCATION   = "/usr/local/sbin/haproxy"
-	LINUX_HAPROXY_BIN_LOCATION = "/usr/local/bin/haproxy"
+	LINUX_HAPROXY_BIN_LOCATION = "/usr/sbin/haproxy"
 )
 
 func HaproxyLocation() string {

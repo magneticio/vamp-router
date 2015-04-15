@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+  FROM ubuntu:latest
 
 MAINTAINER tim@magnetic.io
 
@@ -18,7 +18,7 @@ ADD ./configuration /configuration
 
 ADD ./examples /examples
 
-ADD ./target/linux_i386/haproxy /usr/local/bin/haproxy
+ADD ./target/linux_i386/haproxy /usr/sbin/haproxy
 
 EXPOSE 80
 
