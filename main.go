@@ -190,7 +190,10 @@ func main() {
 
 	*/
 	log.Notice("Initializing REST API...")
-	restApi := api.CreateApi(log, &haConfig, &haRuntime, sseBroker)
-	restApi.Run("0.0.0.0:" + strconv.Itoa(port))
+	if restApi, err := api.CreateApi(log, &haConfig, &haRuntime, sseBroker); err != nil {
+		panic("failed to create REST Api")
+	} else {
+		restApi.Run("0.0.0.0:" + strconv.Itoa(port))
+	}
 
 }

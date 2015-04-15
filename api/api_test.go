@@ -3,10 +3,8 @@ package api
 import (
 	"github.com/magneticio/vamp-router/haproxy"
 	"github.com/magneticio/vamp-router/helpers"
-	"github.com/magneticio/vamp-router/logging"
+	"github.com/magneticio/vamp-router/metrics"
 	gologger "github.com/op/go-logging"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
@@ -19,23 +17,25 @@ const (
 	LOG_PATH      = "/tmp/vamp_lb_test.log"
 )
 
-var (
-	haConfig  = haproxy.Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
-	haRuntime = haproxy.Runtime{Binary: helpers.HaproxyLocation()}
-	log       = logging.ConfigureLog(LOG_PATH)
-)
+func TestApi_CreateAPI(t *testing.T) {
 
-func TestApi_GetConfig(t *testing.T) {
+	log := gologger.MustGetLogger("vamp-router")
 
-	api.CreateApi(port, &haConfig, &haRuntime, log, sseBroker).Run("0.0.0.0:" + strconv.Itoa(port))
+	sseChannel := make(chan metrics.Metric)
 
-	req, _ := http.NewRequest("GET", "/v1/config", nil)
-	w := httptest.NewRecorder()
+	sseBroker := &metrics.SSEBroker{
+		make(map[chan metrics.Metric]bool),
+		make(chan (chan metrics.Metric)),
+		make(chan (chan metrics.Metric)),
+		sseChannel,
+		log,
+	}
 
-	v1.ServeHTTP(w, req)
+	haConfig := haproxy.Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
+	haRuntime := haproxy.Runtime{Binary: helpers.HaproxyLocation()}
 
-	if w.Body.String() != "{\"frontends\":\"[]\"}\n" {
-		t.Errorf("Response should be {\"foo\":\"bar\"}, was: %s", w.Body.String())
+	if _, err := CreateApi(log, &haConfig, &haRuntime, sseBroker); err != nil {
+		t.Errorf("Failed to create API")
 	}
 
 }

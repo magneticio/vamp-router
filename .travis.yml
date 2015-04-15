@@ -5,3 +5,4 @@ before_install:
   - sudo add-apt-repository ppa:vbernat/haproxy-1.5 -y
   - sudo apt-get update -y -qq
   - sudo apt-get install -y -qq haproxy
+script: go test ./...  

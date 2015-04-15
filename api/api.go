@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, SSEBroker *metrics.SSEBroker) *gin.Engine {
+func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, SSEBroker *metrics.SSEBroker) (*gin.Engine, error) {
 
 	gin.SetMode("release")
 
@@ -101,7 +101,7 @@ func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haprox
 		v1.GET("/debug/reset", Reset)
 	}
 
-	return r
+	return r, nil
 }
 
 // Handles the reloading and persisting of the Haproxy config after a successful mutation of the
