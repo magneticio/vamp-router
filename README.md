@@ -1,21 +1,16 @@
 # Vamp-router
----
+
 
 Vamp-router is inspired by [bamboo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed. 
-
-*Note to HAproxy-rest users:* There are some breaking API changes. Most for the better, sticking more closely to
-REST conventions.
 
 Vamp-router's features are:
 
 -   Update the config through REST or through Zookeeper
--   Set complex routes
--   Adjust server weight
+-   Set complex routes & filters for canary releasing and A/B-testing
 -   Get statistics on frontends, backends and servers
 -   Stream statistics over SSE or Kafka
--   Set ACL's with short codes *(experimental)*
+-   Set ACL's with short codes
 -   Set HTTP & TCP Spike limiting *(experimental)*
-
 
 *Important:* : Currently, Vamp-router does NOT check validity of the HAproxy command, ACLs and configs submitted to it. Submitting a config where a frontend references a non-existing backend will be accepted by the REST api but crash HAproxy.
 
