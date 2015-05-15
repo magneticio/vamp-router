@@ -46,12 +46,13 @@ listen stats :1988
 {{range .Frontends}}
 frontend {{.Name}}
     {{if .BindIp}}
-    bind {{.BindIp}}:{{.BindPort}}
+    bind {{.BindIp}}:{{.BindPort}}{{if .BindSsl}} ssl crt /etc/ssl/private/{{.Name}}.pem{{end}}
     {{end}}
 
     {{ if eq .Mode "http" }} option httplog {{end}}
     {{ if eq .Mode "tcp" }} option tcplog {{end}}
-
+    
+    {{if .BindSsl}} reqadd X-Forwarded-Proto:\ https
 
     ###
     #
@@ -60,7 +61,6 @@ frontend {{.Name}}
     # capture request header X-Vamp-Server-CurrentTime len 50
     # capture response header X-Vamp-Server-ResponseTime len 50
     # capture response header X-Vamp-Server-Name len 50
-
 
     log-format {\ "timestamp"\ :\ %t,\ "frontend"\ :\ "%f",\ "method"\ :\ "%r",\ "captured_request_headers"\ :\ "%hrl",\ "captures_response_headers"\ :\ "%hsl"\ }
 

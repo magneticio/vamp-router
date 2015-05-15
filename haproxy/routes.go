@@ -58,7 +58,7 @@ func (c *Config) AddRoute(route Route) *Error {
 		return &Error{400, err}
 	}
 
-	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, resolvedFilters, stableBackend)
+	stableFrontend := c.frontendFactory(route.Name, route.Protocol, route.Port, route.Ssl, resolvedFilters, stableBackend)
 	feSlice = append(feSlice, stableFrontend)
 	/*
 

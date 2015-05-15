@@ -33,6 +33,7 @@ type Route struct {
 	Name      string     `json:"name" binding:"required" valid:"routeName"`
 	Port      int        `json:"port" binding:"required"`
 	Protocol  string     `json:"protocol" binding:"required"`
+	Ssl       bool       `json:"ssl"`
 	HttpQuota Quota      `json:"httpQuota"`
 	TcpQuota  Quota      `json:"tcpQuota"`
 	Filters   []*Filter  `json:"filters"`
@@ -107,6 +108,7 @@ type Frontend struct {
 	Mode           string       `json:"mode" binding:"required"`
 	BindPort       int          `json:"bindPort"`
 	BindIp         string       `json:"bindIp"`
+	BindSsl        bool         `json:"bindSsl"`
 	UnixSock       string       `json:"unixSock"`
 	SockProtocol   string       `json:"sockProtocol"`
 	Options        ProxyOptions `json:"options"`

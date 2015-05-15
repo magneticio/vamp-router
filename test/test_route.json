@@ -2,6 +2,7 @@
       "name": "test_route_2",
       "port": 9026,
       "protocol": "http",
+      "ssl": true,
       "filters": [
         {
           "name": "uses_internet_explorer",

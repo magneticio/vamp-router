@@ -9,13 +9,14 @@ const (
 )
 
 // creates a Frontend object
-func (c *Config) frontendFactory(name string, mode string, port int, filter []*Filter, backend *Backend) *Frontend {
+func (c *Config) frontendFactory(name string, mode string, port int, ssl bool, filter []*Filter, backend *Backend) *Frontend {
 
 	return &Frontend{
 		Name:           name,
 		Mode:           mode,
 		BindPort:       port,
 		BindIp:         "0.0.0.0",
+		BindSsl:		ssl,
 		Options:        ProxyOptions{},
 		DefaultBackend: backend.Name,
 		Filters:        filter,
