@@ -16,7 +16,7 @@ func (c *Config) frontendFactory(name string, mode string, port int, ssl bool, f
 		Mode:           mode,
 		BindPort:       port,
 		BindIp:         "0.0.0.0",
-		BindSsl:		ssl,
+		BindSsl:        ssl,
 		Options:        ProxyOptions{},
 		DefaultBackend: backend.Name,
 		Filters:        filter,

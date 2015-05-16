@@ -14,6 +14,18 @@ global
  #
  #
  log /var/run/vamp.log.sock local0
+ 
+ 
+ # Default SSL material locations
+ ca-base /etc/ssl/certs
+ crt-base /etc/ssl/private
+
+ # Default ciphers to use on SSL-enabled listening sockets.
+ # For more information, see ciphers(1SSL). This list is from:
+ #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+ ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+ ssl-default-bind-options no-sslv3
+ tune.ssl.default-dh-param 1024
 
  defaults
    log global
@@ -52,7 +64,9 @@ frontend {{.Name}}
     {{ if eq .Mode "http" }} option httplog {{end}}
     {{ if eq .Mode "tcp" }} option tcplog {{end}}
     
-    {{if .BindSsl}} reqadd X-Forwarded-Proto:\ https
+    {{if .BindSsl}}
+    reqadd X-Forwarded-Proto:\ https
+    {{end}}
 
     ###
     #
