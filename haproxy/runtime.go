@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -116,15 +117,18 @@ func (r *Runtime) GetInfo() (Info, *Error) {
 }
 
 /* get the basic stats in CSV format
-
 @parameter statsType takes the form of:
 - all
 - frontend
 - backend
-*/
-func (r *Runtime) GetStats(statsType string) ([]StatsService, error) {
 
-	var Stats []StatsService
+Returns a struct. This one is only used by the frontend API
+
+*/
+
+func (r *Runtime) GetJsonStats(statsType string) ([]Stats, error) {
+
+	var Stats []Stats
 	var cmdString string
 
 	switch statsType {
@@ -142,7 +146,7 @@ func (r *Runtime) GetStats(statsType string) ([]StatsService, error) {
 	if err != nil {
 		return Stats, err
 	} else {
-		result, err := tools.CsvToJson(strings.Trim(result, "# "))
+		result, err := tools.CsvToJson(strings.Trim(removeStatsLines(result), "# "))
 		if err != nil {
 			return Stats, err
 		} else {
@@ -154,6 +158,47 @@ func (r *Runtime) GetStats(statsType string) ([]StatsService, error) {
 			}
 		}
 
+	}
+}
+
+/* get the basic stats in CSV format
+
+@parameter statsType takes the form of:
+- all
+- frontend
+- backend
+
+returns a map of a map of strings with all metrics per proxy, i.e:
+
+["my_service"]["scur"] = 0
+							["slim"] = 10000
+							....
+
+*/
+
+func (r *Runtime) GetStats(statsType string) (map[string]map[string]string, error) {
+
+	var cmdString string
+	m := make(map[string]map[string]string)
+
+	switch statsType {
+	case "all":
+		cmdString = "show stat -1\n"
+	case "backend":
+		cmdString = "show stat -1 2 -1\n"
+	case "frontend":
+		cmdString = "show stat -1 1 -1\n"
+	case "server":
+		cmdString = "show stat -1 4 -1\n"
+	}
+
+	result, err := r.cmd(cmdString)
+	if err != nil {
+		return m, err
+	} else {
+
+		result, err := tools.CsvToMap(strings.Trim(removeStatsLines(result), "# "))
+		return result, err
 	}
 }
 
@@ -191,4 +236,11 @@ func (r *Runtime) Reset() *Error {
 		return &Error{500, errors.New("Error resetting counters")}
 	}
 	return nil
+}
+
+func removeStatsLines(in string) string {
+
+	rx := regexp.MustCompile("^[stats].*$[\r\n]+")
+	res := rx.ReplaceAllString(in, "")
+	return res
 }

@@ -171,7 +171,7 @@ func runDocker(c *Container, wg *sync.WaitGroup) {
 	name := "--name=\"" + c.Name + "\""
 	portMap := strconv.Itoa(c.OutPort) + ":" + strconv.Itoa(c.InPort)
 
-	// fmt.Println("--- docker run -d " + name + " -p " + portMap + " " + c.Image + " " + c.Parameters)
+	fmt.Println("--- docker run -d " + name + " -p " + portMap + " " + c.Image + " " + c.Parameters)
 
 	Docker := exec.Command("docker", "run", "-d", name, "-p", portMap, c.Image, c.Parameters)
 	_ = Docker.Run()

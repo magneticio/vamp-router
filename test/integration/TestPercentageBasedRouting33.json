@@ -44,21 +44,21 @@
             "outPort": 9012,
             "inPort": 8080,
             "name": "monarch_a",
-            "image": "magneticio/monarch",
+            "image": "magneticio/monarch:0.2",
             "parameters": "--version=a"
         },
         {
             "outPort": 9013,
             "inPort": 8080,
             "name": "monarch_b",
-            "image": "magneticio/monarch",
+            "image": "magneticio/monarch:0.2",
             "parameters": "--version=b"
         },
         {
             "outPort": 9014,
             "inPort": 8080,
             "name": "monarch_c",
-            "image": "magneticio/monarch",
+            "image": "magneticio/monarch:0.2",
             "parameters": "--version=c"
         }
     ],

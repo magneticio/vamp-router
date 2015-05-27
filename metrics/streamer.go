@@ -3,9 +3,7 @@ package metrics
 import (
 	"github.com/magneticio/vamp-router/haproxy"
 	gologger "github.com/op/go-logging"
-	"reflect"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -29,7 +27,7 @@ func (s *Streamer) AddClient(c chan Metric) {
 // Just sets the metrics we want for now...
 func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int, log *gologger.Logger) {
 	s.Log = log
-	s.wantedMetrics = []string{"Scur", "Qcur", "Smax", "Slim", "Weight", "Qtime", "Ctime", "Rtime", "Ttime", "Req_rate", "Req_rate_max", "Req_tot", "Rate", "Rate_lim", "Rate_max"}
+	s.wantedMetrics = []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max"}
 	s.haRuntime = haRuntime
 	s.pollFrequency = frequency
 	s.Clients = make(map[chan Metric]bool)
@@ -43,40 +41,65 @@ func (s *Streamer) Start() error {
 
 	s.Heartbeat()
 
+	// create a channel to send the stats to the parser
+	statsChannel := make(chan map[string]map[string]string)
+
+	// start up the parser in a separate routine
+	go ParseMetrics(statsChannel, s.Clients, s.wantedMetrics, &s.Counter)
+
+	for {
+		// start pumping the stats into the channel
+		stats, _ := s.haRuntime.GetStats("all")
+		statsChannel <- stats
+		time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
+	}
+}
+
+/*
+	Parses a []Stats and injects it into each Metric channel in a map of channels
+*/
+
+func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Metric]bool, wantedMetrics []string, counter *int64) {
+
+	localTime := time.Now().Format(time.RFC3339)
+
 	for {
 
-		stats, _ := s.haRuntime.GetStats("all")
-		localTime := time.Now().Format(time.RFC3339)
+		select {
 
-		// for each proxy in the stats dump, pick out the wanted metrics.
-		for _, proxy := range stats {
+		case stats := <-statsChannel:
 
-			// filter out the metrics for haproxy's own stats page
-			if proxy.Pxname != "stats" && proxy.Pxname != "abusers" {
+			// for each proxy in the stats dump, pick out the wanted metrics.
+
+			for _, proxy := range stats {
 
 				// loop over all wanted metrics for the current proxy
-				for _, metric := range s.wantedMetrics {
+				for _, metric := range wantedMetrics {
 
 					// compile tags
-					proxies := strings.Split(proxy.Pxname, ".")
+					// proxies := strings.Split(proxy.Pxname, ".")
 
 					/* we add a specific "route" tag (that doesn't exist in the standard haproxy stats) to
 					all "top-level" frontend and backends. We check when to insert this by the length of the
 					proxies slice after splitting. One item equals a route.
 					*/
-					tags := append(proxies, []string{strings.ToLower(proxy.Svname), strings.ToLower(metric)}...)
+					// tags := append(proxies, []string{strings.ToLower(proxy.Svname), strings.ToLower(metric)}...)
 
-					if len(proxies) == 1 && (proxy.Svname == "BACKEND" || proxy.Svname == "FRONTEND") {
-						tags = append(tags, "route")
-					}
-					field := reflect.ValueOf(proxy).FieldByName(metric).String()
+					// if len(proxies) == 1 && (proxy.Svname == "BACKEND" || proxy.Svname == "FRONTEND") {
+					// 	tags = append(tags, "route")
+					// }
+
+					tags := []string{proxy["pxname"]}
+					field := proxy[metric]
+
 					if field != "" {
 
 						metricValue, _ := strconv.Atoi(field)
 						metric := Metric{tags, metricValue, localTime}
-						atomic.AddInt64(&s.Counter, 1)
+						// fmt.Printf("compiled metric => tags: %s, value: %d, time: %s \n", tags, metricValue, localTime)
+						atomic.AddInt64(counter, 1)
 
-						for s, _ := range s.Clients {
+						for s, _ := range c {
 							s <- metric
 						}
 
@@ -84,7 +107,6 @@ func (s *Streamer) Start() error {
 				}
 			}
 		}
-		time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
 	}
 }
 

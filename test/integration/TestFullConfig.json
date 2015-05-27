@@ -13,7 +13,7 @@
             "outPort" : 9012,
             "inPort"  : 8080,
             "name" : "monarch_a",
-            "image": "magneticio/monarch",
+            "image": "magneticio/monarch:0.2",
             "parameters" : "--version=a"
         }
     ],
