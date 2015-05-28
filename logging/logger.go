@@ -14,7 +14,6 @@ type Logger struct {
 func PrintLogo(version string) string {
 
 	var logo = `
-
 ██╗   ██╗ █████╗ ███╗   ███╗██████╗
 ██║   ██║██╔══██╗████╗ ████║██╔══██╗
 ██║   ██║███████║██╔████╔██║██████╔╝

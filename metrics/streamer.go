@@ -27,7 +27,7 @@ func (s *Streamer) AddClient(c chan Metric) {
 // Just sets the metrics we want for now...
 func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int, log *gologger.Logger) {
 	s.Log = log
-	s.wantedMetrics = []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max"}
+	s.wantedMetrics = []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	s.haRuntime = haRuntime
 	s.pollFrequency = frequency
 	s.Clients = make(map[chan Metric]bool)
