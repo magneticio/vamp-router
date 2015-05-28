@@ -1,12 +1,10 @@
 {
 	"ImportPath": "github.com/magneticio/vamp-router",
 	"GoVersion": "go1.4.1",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
-		{
-			"ImportPath": "code.google.com/p/go-uuid/uuid",
-			"Comment": "null-15",
-			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
-		},
 		{
 			"ImportPath": "code.google.com/p/snappy-go/snappy",
 			"Comment": "null-15",
@@ -35,17 +33,21 @@
 			"Rev": "043ae16291351db8465272edf465c9f388161627"
 		},
 		{
-			"ImportPath": "github.com/natefinch/lumberjack",
-			"Comment": "v1.0-12-gd28785c",
-			"Rev": "d28785c2f27cd682d872df46ccd8232843629f54"
-		},
-		{
 			"ImportPath": "github.com/op/go-logging",
 			"Rev": "fb0230561a6ba1cab17beb95f1faedc16584fdb8"
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
 			"Rev": "9a466eec51e72221d972768a15f025bf096fc3e0"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Rev": "7c7f2020c4c9491594b85767967f4619c2fa75f9"
+		},
+		{
+			"ImportPath": "gopkg.in/natefinch/lumberjack.v2",
+			"Comment": "v1.0-15-g588a21f",
+			"Rev": "588a21fb0fa0ebdfde42670fa214576b6f0f22df"
 		}
 	]
 }

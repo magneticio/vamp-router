@@ -1,8 +1,8 @@
 package logging
 
 import (
-	lumberjack "github.com/natefinch/lumberjack"
 	gologging "github.com/op/go-logging"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
 )
