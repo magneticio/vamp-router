@@ -97,30 +97,30 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 
 							//- if pxname has no "." separator, and svname is [BACKEND|FRONTEND] it is the top route
 							if len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND") {
-								tags = append(tags, "route:"+proxy["pxname"])
+								tags = append(tags, "routes:"+proxy["pxname"])
 							} else {
 
 								//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
 								// server that routes to the actual service via a socket.
 								if len(pxnames) == 1 && (svname != "BACKEND" || svname != "FRONTEND") {
 									sockName := strings.Split(svname, ".")
-									tags = append(tags, "route:"+proxy["pxname"], "socket_server:"+sockName[1])
+									tags = append(tags, "routes:"+proxy["pxname"], "socket_servers:"+sockName[1])
 								} else {
 
 									//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
 									if len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND") {
-										tags = append(tags, "route:"+pxnames[0], "service:"+pxnames[1])
+										tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1])
 									} else {
 
 										//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
 										if len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND") {
-											tags = append(tags, "route:"+pxnames[0], "service:"+pxnames[1], "server:"+svname)
+											tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "servers:"+svname)
 										}
 									}
 								}
 							}
 
-							tags = append(tags, "metric:"+metric)
+							tags = append(tags, "metrics:"+metric)
 
 							metricValue, _ := strconv.Atoi(value)
 							metric := Metric{tags, metricValue, localTime}
