@@ -11,7 +11,7 @@ const (
 func BenchmarkMetrics_ParseMetrics(b *testing.B) {
 
 	var counter int64
-	wantedMetrics := []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max"}
+	wantedMetrics := []string{"scur", "qcur", "qmax", "smax", "slim", "econ,", "status", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	m := make(map[chan Metric]bool)
 	c := make(chan Metric)
 	m[c] = true
@@ -28,7 +28,7 @@ func BenchmarkMetrics_ParseMetrics(b *testing.B) {
 func TestMetrics_ParseMetrics(t *testing.T) {
 
 	var counter int64
-	wantedMetrics := []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max"}
+	wantedMetrics := []string{"scur", "qcur", "qmax", "smax", "slim", "econ,", "status", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	m := make(map[chan Metric]bool)
 	c := make(chan Metric)
 	m[c] = true

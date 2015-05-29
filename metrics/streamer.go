@@ -4,6 +4,7 @@ import (
 	"github.com/magneticio/vamp-router/haproxy"
 	gologger "github.com/op/go-logging"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -27,7 +28,7 @@ func (s *Streamer) AddClient(c chan Metric) {
 // Just sets the metrics we want for now...
 func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int, log *gologger.Logger) {
 	s.Log = log
-	s.wantedMetrics = []string{"scur", "qcur", "smax", "slim", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
+	s.wantedMetrics = []string{"scur", "qcur", "qmax", "smax", "slim", "ereq", "econ", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	s.haRuntime = haRuntime
 	s.pollFrequency = frequency
 	s.Clients = make(map[chan Metric]bool)
@@ -61,7 +62,10 @@ func (s *Streamer) Start() error {
 
 func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Metric]bool, wantedMetrics []string, counter *int64) {
 
-	localTime := time.Now().Format(time.RFC3339)
+	wantedFrontendMetric := make(map[string]bool)
+	wantedFrontendMetric["ereq"] = true
+	wantedFrontendMetric["rate_lim"] = true
+	wantedFrontendMetric["req_rate_max"] = true
 
 	for {
 
@@ -69,40 +73,63 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 
 		case stats := <-statsChannel:
 
-			// for each proxy in the stats dump, pick out the wanted metrics.
+			localTime := time.Now().Format(time.RFC3339)
 
+			// for each proxy in the stats dump, pick out the wanted metrics.
 			for _, proxy := range stats {
 
 				// loop over all wanted metrics for the current proxy
 				for _, metric := range wantedMetrics {
 
-					// compile tags
-					// proxies := strings.Split(proxy.Pxname, ".")
+					// discard all empty metrics
+					if proxy[metric] != "" {
 
-					/* we add a specific "route" tag (that doesn't exist in the standard haproxy stats) to
-					all "top-level" frontend and backends. We check when to insert this by the length of the
-					proxies slice after splitting. One item equals a route.
-					*/
-					// tags := append(proxies, []string{strings.ToLower(proxy.Svname), strings.ToLower(metric)}...)
+						value := proxy[metric]
+						svname := proxy["svname"]
+						tags := []string{}
+						pxnames := strings.Split(proxy["pxname"], ".")
 
-					// if len(proxies) == 1 && (proxy.Svname == "BACKEND" || proxy.Svname == "FRONTEND") {
-					// 	tags = append(tags, "route")
-					// }
+						// allow only some FRONTEND metrics and all non-FRONTEND metrics
+						if (svname == "FRONTEND" && wantedFrontendMetric[metric]) || svname != "FRONTEND" {
 
-					tags := []string{proxy["pxname"]}
-					field := proxy[metric]
+							// Compile tags
+							// we tag the metrics according to the followin scheme
 
-					if field != "" {
+							//- if pxname has no "." separator, and svname is [BACKEND|FRONTEND] it is the top route
+							if len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND") {
+								tags = append(tags, "route:"+proxy["pxname"])
+							} else {
 
-						metricValue, _ := strconv.Atoi(field)
-						metric := Metric{tags, metricValue, localTime}
-						// fmt.Printf("compiled metric => tags: %s, value: %d, time: %s \n", tags, metricValue, localTime)
-						atomic.AddInt64(counter, 1)
+								//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
+								// server that routes to the actual service via a socket.
+								if len(pxnames) == 1 && (svname != "BACKEND" || svname != "FRONTEND") {
+									sockName := strings.Split(svname, ".")
+									tags = append(tags, "route:"+proxy["pxname"], "socket_server:"+sockName[1])
+								} else {
 
-						for s, _ := range c {
-							s <- metric
+									//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
+									if len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND") {
+										tags = append(tags, "route:"+pxnames[0], "service:"+pxnames[1])
+									} else {
+
+										//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
+										if len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND") {
+											tags = append(tags, "route:"+pxnames[0], "service:"+pxnames[1], "server:"+svname)
+										}
+									}
+								}
+							}
+
+							tags = append(tags, "metric:"+metric)
+
+							metricValue, _ := strconv.Atoi(value)
+							metric := Metric{tags, metricValue, localTime}
+							atomic.AddInt64(counter, 1)
+
+							for s, _ := range c {
+								s <- metric
+							}
 						}
-
 					}
 				}
 			}

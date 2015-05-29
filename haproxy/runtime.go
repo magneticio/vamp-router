@@ -239,8 +239,7 @@ func (r *Runtime) Reset() *Error {
 }
 
 func removeStatsLines(in string) string {
-
-	rx := regexp.MustCompile("^[stats].*$[\r\n]+")
+	rx := regexp.MustCompile("stats[,].*")
 	res := rx.ReplaceAllString(in, "")
 	return res
 }
