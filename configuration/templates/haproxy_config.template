@@ -111,10 +111,16 @@ frontend {{.Name}}
     ###
     # Filter Management
     #
+    # set filters with optional negation
+    #
 
     {{range .Filters}}
     acl {{.Name}} {{.Condition}}
+    {{if .Negate}}
+    use_backend {{.Destination}} if !{{.Name}}
+    {{else}}
     use_backend {{.Destination}} if {{.Name}}
+    {{end}}
     {{end}}
 
     default_backend {{.DefaultBackend}}

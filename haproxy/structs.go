@@ -43,6 +43,7 @@ type Filter struct {
 	Name        string `json:"name" binding:"required" valid:"filterName"`
 	Condition   string `json:"condition" binding:"required"`
 	Destination string `json:"destination" binding:"required"`
+	Negate      bool   `json:"negate,omitempty"`
 }
 
 type Quota struct {
