@@ -120,7 +120,7 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 								}
 							}
 
-							tags = append(tags, "metrics:"+metric)
+							tags = append(tags, "metrics:"+metric, "type:router-metric")
 
 							metricValue, _ := strconv.Atoi(value)
 							metric := Metric{tags, metricValue, localTime}
