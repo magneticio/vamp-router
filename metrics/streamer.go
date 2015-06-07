@@ -87,53 +87,57 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 						value := proxy[metric]
 						svname := proxy["svname"]
 						tags := []string{}
-						pxnames := strings.Split(proxy["pxname"], ".")
+						pxnames := strings.Split(proxy["pxname"], "::")
 
 						// allow only some FRONTEND metrics and all non-FRONTEND metrics
 						if (svname == "FRONTEND" && wantedFrontendMetric[metric]) || svname != "FRONTEND" {
 
 							// Compile tags
-							// we tag the metrics according to the followin scheme
+							// we tag the metrics according to the following scheme
+							switch {
 
-							//- if pxname has no "." separator, and svname is [BACKEND|FRONTEND] it is the top route
-							if len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND") {
-								tags = append(tags, "routes:"+proxy["pxname"])
-							} else {
+							//- if pxname has no "." separator, and svname is [BACKEND|FRONTEND] it is the top route or "endpoint"
+							case len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND"):
+								tags = append(tags, "routes:"+proxy["pxname"], "endpoints")
 
-								//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
-								// server that routes to the actual service via a socket.
-								if len(pxnames) == 1 && (svname != "BACKEND" || svname != "FRONTEND") {
-									sockName := strings.Split(svname, ".")
-									tags = append(tags, "routes:"+proxy["pxname"], "socket_servers:"+sockName[1])
-								} else {
+								EmitMetric(localTime, tags, metric, value, counter, c)
 
-									//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
-									if len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND") {
-										tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1])
-									} else {
+							//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
+							// server that routes to the actual service via a socket.
+							case len(pxnames) == 1 && (svname != "BACKEND" || svname != "FRONTEND"):
+							// sockName := strings.Split(svname, ".")
+							// tags = append(tags, "routes:"+proxy["pxname"], "socket_servers:"+sockName[1])
 
-										//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
-										if len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND") {
-											tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "servers:"+svname)
-										}
-									}
-								}
-							}
+							// we dont emit this metrics currently
+							// EmitMetric(localTime, tags, metric, value, counter, c)
 
-							tags = append(tags, "metrics:"+metric, "type:router-metric")
+							//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
+							case len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND"):
+								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1])
+								EmitMetric(localTime, tags, metric, value, counter, c)
 
-							metricValue, _ := strconv.Atoi(value)
-							metric := Metric{tags, metricValue, localTime}
-							atomic.AddInt64(counter, 1)
-
-							for s, _ := range c {
-								s <- metric
+							//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
+							case len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND"):
+								tags = append(tags, "routes:"+pxnames[0], "servers:"+svname)
+								EmitMetric(localTime, tags, metric, value, counter, c)
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+func EmitMetric(time string, tags []string, metric string, value string, counter *int64, c map[chan Metric]bool) {
+	tags = append(tags, "metrics:"+metric)
+	_type := "router-metric"
+	metricValue, _ := strconv.Atoi(value)
+	metricObj := Metric{tags, metricValue, time, _type}
+	atomic.AddInt64(counter, 1)
+
+	for s, _ := range c {
+		s <- metricObj
 	}
 }
 

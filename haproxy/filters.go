@@ -118,7 +118,7 @@ func parseFilter(routeName string, filter *Filter) (*Filter, *Error) {
 		return filter, &Error{400, err}
 	}
 
-	destination := routeName + "." + filter.Destination
+	destination := FilterName(routeName, filter.Destination)
 	acl := Filter{filter.Name, "", destination, false}
 
 	acl.Condition, acl.Negate = parseFilterCondition(filter.Condition)
