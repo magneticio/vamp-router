@@ -34,7 +34,7 @@ Start up an instance with all defaults and bind it to the local network interfac
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
                            router
-                           version 0.7.6
+                           version 0.7.7
                            by magnetic.io
                                           
     18:39:05.413 main NOTI ==>  Attempting to load config at //.vamp_lb/haproxy_new.cfg
@@ -206,6 +206,7 @@ The following are all equivalent:
     user-agent=Android
     User-Agent=Android
     user-agent = Android
+    user.agent = Android
 
 Currently available are:
 
@@ -217,6 +218,11 @@ Currently available are:
     Header *header name* Contains *string*
     Has Header *header name*
     Misses Header *header name*
+
+You can also use negations on any filter with an equality operator, like:
+
+    User-Agent != *string*
+    Host != *string*
 
 #### Route filters vs. ACL's
 
