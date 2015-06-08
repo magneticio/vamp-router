@@ -29,7 +29,7 @@ Start up an instance with all defaults and bind it to the local network interfac
      ╚████╔╝ ██║  ██║██║ ╚═╝ ██║██║
       ╚═══╝  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
                            router
-                           version 0.7.6
+                           version 0.7.7
                            by magnetic.io
                                           
     18:39:05.413 main NOTI ==>  Attempting to load config at //.vamp_lb/haproxy_new.cfg
@@ -201,6 +201,7 @@ The following are all equivalent:
     user-agent=Android
     User-Agent=Android
     user-agent = Android
+    user.agent = Android
 
 Currently available are:
 
@@ -212,6 +213,11 @@ Currently available are:
     Header *header name* Contains *string*
     Has Header *header name*
     Misses Header *header name*
+
+You can also use negations on any filter with an equality operator, like:
+
+    User-Agent != *string*
+    Host != *string*
 
 #### Route filters vs. ACL's
 
@@ -504,7 +510,7 @@ Compile the application
 
 Integration tests require a functioning local Docker installation and Haproxy. Run the integration test suite as follows:
 
-    $ go test -tags integration -v --customWorkDir=/tmp/vamp_integration_test --headless=test_route_2
+    $ go test -tags integration -v --customWorkDir=/tmp/vamp_integration_test --headless=true
 
 The `--customWorkDir` flag makes sure you will not overwrite or delete any previous settings as the test runner will delete
 this direcory at the end. The `--headless` flag will ensure only the test code outputs to the console.

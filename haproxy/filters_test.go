@@ -43,32 +43,31 @@ func TestFilters_ParseFilterCondition(t *testing.T) {
 	  should pass through untouched
 	*/
 
-	type Condition struct {
-		Input    string
-		Expected string
-	}
-
 	tests := []struct {
-		Input    string
-		Expected string
+		Input          string
+		ExpectedString string
+		ExpectedNegate bool
 	}{
-		{"hdr_sub(user-agent) Android", "hdr_sub(user-agent) Android"},
-		{"user-agent=Android", "hdr_sub(user-agent) Android"},
-		{"User-Agent=Android", "hdr_sub(user-agent) Android"},
-		{"user-agent = Android", "hdr_sub(user-agent) Android"},
-		{"user-agent  =  Android", "user-agent  =  Android"},
-		{"host = www.google.com", "hdr_str(host) www.google.com"},
-		{"cookie MYCUSTOMER contains Value=good", "cook_sub(MYCUSTOMER) Value=good"},
-		{"has cookie JSESSIONID", "cook(JSESSIONID) -m found"},
-		{"misses cookie JSESSIONID", "cook_cnt(JSESSIONID) eq 0"},
+		{"hdr_sub(user-agent) Android", "hdr_sub(user-agent) Android", false},
+		{"user-agent=Android", "hdr_sub(user-agent) Android", false},
+		{"user-agent!=Android", "hdr_sub(user-agent) Android", true},
+		{"User-Agent=Android", "hdr_sub(user-agent) Android", false},
+		{"user-agent = Android", "hdr_sub(user-agent) Android", false},
+		{"user-agent  =  Android", "user-agent  =  Android", false},
+		{"user.agent = Ios", "hdr_sub(user-agent) Ios", false},
+		{"host = www.google.com", "hdr_str(host) www.google.com", false},
+		{"host != www.google.com", "hdr_str(host) www.google.com", true},
+		{"cookie MYCUSTOMER contains Value=good", "cook_sub(MYCUSTOMER) Value=good", false},
+		{"has cookie JSESSIONID", "cook(JSESSIONID) -m found", false},
+		{"misses cookie JSESSIONID", "cook_cnt(JSESSIONID) eq 0", false},
 
-		{"has header X-SPECIAL", "hdr_cnt(X-SPECIAL) gt 0"},
-		{"misses header X-SPECIAL", "hdr_cnt(X-SPECIAL) eq 0"},
+		{"has header X-SPECIAL", "hdr_cnt(X-SPECIAL) gt 0", false},
+		{"misses header X-SPECIAL", "hdr_cnt(X-SPECIAL) eq 0", false},
 	}
 
 	for i, condition := range tests {
-		if result := parseFilterCondition(condition.Input); result != condition.Expected {
-			t.Errorf("Failed to correctly parse filter condition %d. Got %s but expected %s", (i + 1), result, condition.Expected)
+		if result, negate := parseFilterCondition(condition.Input); result != condition.ExpectedString || negate != condition.ExpectedNegate {
+			t.Errorf("Failed to correctly parse filter condition %d. Got %s but expected %s with negate %s", (i + 1), result, condition.ExpectedString, condition.ExpectedNegate)
 		}
 	}
 }

@@ -9,6 +9,10 @@ import (
 	"text/template"
 )
 
+const (
+	SEPARATOR = "::"
+)
+
 // Load a config from disk
 func (c *Config) GetConfigFromDisk(file string) error {
 	if s, err := ioutil.ReadFile(file); err != nil {
@@ -431,20 +435,24 @@ func (c *Config) ServerExists(routeName string, serviceName string, serverName s
 
 // helper function to create a Backend or Frontend name based on a Route and Service
 func ServiceName(routeName string, serviceName string) string {
-	return routeName + "." + serviceName
+	return routeName + SEPARATOR + serviceName
 }
 func RouteName(routeName string, serviceName string) string {
-	return routeName + "." + serviceName
+	return routeName + SEPARATOR + serviceName
 }
 
 func BackendName(routeName string, serviceName string) string {
-	return routeName + "." + serviceName
+	return routeName + SEPARATOR + serviceName
 }
 
 func FrontendName(routeName string, serviceName string) string {
-	return routeName + "." + serviceName
+	return routeName + SEPARATOR + serviceName
 }
 
 func ServerName(routeName string, serviceName string) string {
-	return routeName + "." + serviceName
+	return routeName + SEPARATOR + serviceName
+}
+
+func FilterName(routeName string, filterDestination string) string {
+	return routeName + SEPARATOR + filterDestination
 }

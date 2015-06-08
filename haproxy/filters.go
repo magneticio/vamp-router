@@ -19,8 +19,8 @@ import (
 */
 
 const (
-	UserAgent      string = "^[uU]ser-[aA]gent[ ]?=[ ]?([a-zA-Z0-9]+)$"
-	Host           string = "^[hH]ost[ ]?=[ ]?([a-zA-Z0-9.]+)$"
+	UserAgent      string = "^[uU]ser[-.][aA]gent[ ]?([!])?=[ ]?([a-zA-Z0-9]+)$"
+	Host           string = "^[hH]ost[ ]?([!])?=[ ]?([a-zA-Z0-9.]+)$"
 	CookieContains string = "^[cC]ookie (.*) [Cc]ontains (.*)$"
 	HasCookie      string = "^[Hh]as [Cc]ookie (.*)$"
 	MissesCookie   string = "^[Mm]isses [Cc]ookie (.*)$"
@@ -40,41 +40,48 @@ var (
 	rxMissesHeader   = regexp.MustCompile(MissesHeader)
 )
 
-func parseFilterCondition(condition string) string {
+func parseFilterCondition(condition string) (string, bool) {
 
 	if result := rxUserAgent.FindStringSubmatch(condition); result != nil {
-		return ("hdr_sub(user-agent) " + strings.TrimSpace(result[1]))
+		if strings.TrimSpace(result[1]) == "!" {
+			return ("hdr_sub(user-agent) " + strings.TrimSpace(result[2])), true
+		}
+		return ("hdr_sub(user-agent) " + strings.TrimSpace(result[2])), false
+
 	}
 
 	if result := rxHost.FindStringSubmatch(condition); result != nil {
-		return ("hdr_str(host) " + strings.TrimSpace(result[1]))
+		if strings.TrimSpace(result[1]) == "!" {
+			return ("hdr_str(host) " + strings.TrimSpace(result[2])), true
+		}
+		return ("hdr_str(host) " + strings.TrimSpace(result[2])), false
 	}
 
 	if result := rxCookieContains.FindStringSubmatch(condition); result != nil {
-		return ("cook_sub(" + strings.TrimSpace(result[1]) + ") " + strings.TrimSpace(result[2]))
+		return ("cook_sub(" + strings.TrimSpace(result[1]) + ") " + strings.TrimSpace(result[2])), false
 	}
 
 	if result := rxHasCookie.FindStringSubmatch(condition); result != nil {
-		return ("cook(" + strings.TrimSpace(result[1]) + ") -m found")
+		return ("cook(" + strings.TrimSpace(result[1]) + ") -m found"), false
 	}
 
 	if result := rxMissesCookie.FindStringSubmatch(condition); result != nil {
-		return ("cook_cnt(" + strings.TrimSpace(result[1]) + ") eq 0")
+		return ("cook_cnt(" + strings.TrimSpace(result[1]) + ") eq 0"), false
 	}
 
 	if result := rxHeaderContains.FindStringSubmatch(condition); result != nil {
-		return ("hdr_sub(" + strings.TrimSpace(result[1]) + ") " + strings.TrimSpace(result[2]))
+		return ("hdr_sub(" + strings.TrimSpace(result[1]) + ") " + strings.TrimSpace(result[2])), false
 	}
 
 	if result := rxHasHeader.FindStringSubmatch(condition); result != nil {
-		return ("hdr_cnt(" + strings.TrimSpace(result[1]) + ") gt 0")
+		return ("hdr_cnt(" + strings.TrimSpace(result[1]) + ") gt 0"), false
 	}
 
 	if result := rxMissesHeader.FindStringSubmatch(condition); result != nil {
-		return ("hdr_cnt(" + strings.TrimSpace(result[1]) + ") eq 0")
+		return ("hdr_cnt(" + strings.TrimSpace(result[1]) + ") eq 0"), false
 	}
 
-	return condition
+	return condition, false
 }
 
 /*
@@ -111,10 +118,10 @@ func parseFilter(routeName string, filter *Filter) (*Filter, *Error) {
 		return filter, &Error{400, err}
 	}
 
-	destination := routeName + "." + filter.Destination
-	acl := Filter{filter.Name, "", destination}
+	destination := FilterName(routeName, filter.Destination)
+	acl := Filter{filter.Name, "", destination, false}
 
-	acl.Condition = parseFilterCondition(filter.Condition)
+	acl.Condition, acl.Negate = parseFilterCondition(filter.Condition)
 	return &acl, nil
 
 }

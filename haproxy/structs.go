@@ -43,6 +43,7 @@ type Filter struct {
 	Name        string `json:"name" binding:"required" valid:"filterName"`
 	Condition   string `json:"condition" binding:"required"`
 	Destination string `json:"destination" binding:"required"`
+	Negate      bool   `json:"negate,omitempty"`
 }
 
 type Quota struct {
@@ -131,7 +132,7 @@ type ProxyOptions struct {
 }
 
 // Struct to hold the output from the /stats endpoint
-type StatsService struct {
+type Stats struct {
 	Pxname         string `json:"pxname"`
 	Svname         string `json:"svname"`
 	Qcur           string `json:"qcur"`

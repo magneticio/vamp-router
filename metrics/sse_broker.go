@@ -119,7 +119,7 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Write to the ResponseWriter, `w`.
-		fmt.Fprintf(w, "event: metric\ndata: %s\n\n", json)
+		fmt.Fprintf(w, "event: router-metric\ndata: %s\n\n", json)
 
 		// Flush the response.  This is only possible if
 		// the repsonse supports streaming.

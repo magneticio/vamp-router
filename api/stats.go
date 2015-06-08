@@ -8,7 +8,7 @@ import (
 
 func GetAllStats(c *gin.Context) {
 
-	status, err := Runtime(c).GetStats("all")
+	status, err := Runtime(c).GetJsonStats("all")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -19,7 +19,7 @@ func GetAllStats(c *gin.Context) {
 
 func GetBackendStats(c *gin.Context) {
 
-	status, err := Runtime(c).GetStats("backend")
+	status, err := Runtime(c).GetJsonStats("backend")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -30,7 +30,7 @@ func GetBackendStats(c *gin.Context) {
 
 func GetFrontendStats(c *gin.Context) {
 
-	status, err := Runtime(c).GetStats("frontend")
+	status, err := Runtime(c).GetJsonStats("frontend")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {
@@ -40,7 +40,7 @@ func GetFrontendStats(c *gin.Context) {
 
 func GetServerStats(c *gin.Context) {
 
-	status, err := Runtime(c).GetStats("server")
+	status, err := Runtime(c).GetJsonStats("server")
 	if err != nil {
 		c.String(500, err.Error())
 	} else {

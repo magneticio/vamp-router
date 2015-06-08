@@ -29,7 +29,7 @@ var (
 	pidFilePath      string
 	headless         bool
 	log              *gologger.Logger
-	version          = "0.7.6"
+	version          = "0.7.7"
 	stream           metrics.Streamer
 	workDir          helpers.WorkDir
 	customWorkDir    string
@@ -80,9 +80,7 @@ func main() {
 	log.Info(logging.PrintLogo(version))
 
 	/*
-
 		HAproxy runtime and configuration setup
-
 	*/
 
 	// setup Haproxy runtime
@@ -127,9 +125,7 @@ func main() {
 	}
 
 	/*
-
 		Metric streaming setup
-
 	*/
 
 	log.Notice("Initializing metric streams...")
@@ -167,9 +163,7 @@ func main() {
 	go stream.Start()
 
 	/*
-
 		Zookeeper setup
-
 	*/
 
 	if len(zooConString) > 0 {
@@ -185,9 +179,7 @@ func main() {
 	}
 
 	/*
-
 		Rest API setup
-
 	*/
 	log.Notice("Initializing REST API...")
 	if restApi, err := api.CreateApi(log, &haConfig, &haRuntime, sseBroker); err != nil {
