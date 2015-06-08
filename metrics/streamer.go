@@ -98,7 +98,7 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 
 							//- if pxname has no "." separator, and svname is [BACKEND|FRONTEND] it is the top route or "endpoint"
 							case len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND"):
-								tags = append(tags, "routes:"+proxy["pxname"], "endpoints")
+								tags = append(tags, "routes:"+proxy["pxname"], "route")
 
 								EmitMetric(localTime, tags, metric, value, counter, c)
 
@@ -113,12 +113,12 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 
 							//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
 							case len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND"):
-								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1])
+								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "service")
 								EmitMetric(localTime, tags, metric, value, counter, c)
 
 							//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
 							case len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND"):
-								tags = append(tags, "routes:"+pxnames[0], "servers:"+svname)
+								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "servers:"+svname, "server")
 								EmitMetric(localTime, tags, metric, value, counter, c)
 							}
 						}
