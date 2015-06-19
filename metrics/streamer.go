@@ -66,6 +66,7 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 	wantedFrontendMetric["ereq"] = true
 	wantedFrontendMetric["rate_lim"] = true
 	wantedFrontendMetric["req_rate_max"] = true
+	wantedFrontendMetric["req_rate"] = true
 
 	for {
 
