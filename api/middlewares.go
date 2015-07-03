@@ -53,3 +53,9 @@ func SSEMiddleware(SSEBroker *metrics.SSEBroker) gin.HandlerFunc {
 
 	}
 }
+
+func InfoMiddleWare(version string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("appVersion", version)
+	}
+}

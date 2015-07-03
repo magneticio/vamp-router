@@ -29,7 +29,6 @@ var (
 	pidFilePath      string
 	headless         bool
 	log              *gologger.Logger
-	version          = "0.7.7"
 	stream           metrics.Streamer
 	workDir          helpers.WorkDir
 	customWorkDir    string
@@ -77,7 +76,7 @@ func main() {
 
 	// setup logging
 	log = logging.ConfigureLog(workDir.Dir()+logPath, headless)
-	log.Info(logging.PrintLogo(version))
+	log.Info(logging.PrintLogo(Version))
 
 	/*
 		HAproxy runtime and configuration setup
@@ -182,7 +181,7 @@ func main() {
 		Rest API setup
 	*/
 	log.Notice("Initializing REST API...")
-	if restApi, err := api.CreateApi(log, &haConfig, &haRuntime, sseBroker); err != nil {
+	if restApi, err := api.CreateApi(log, &haConfig, &haRuntime, sseBroker, Version); err != nil {
 		panic("failed to create REST Api")
 	} else {
 		restApi.Run("0.0.0.0:" + strconv.Itoa(port))

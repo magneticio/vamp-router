@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, SSEBroker *metrics.SSEBroker) (*gin.Engine, error) {
+func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haproxy.Runtime, SSEBroker *metrics.SSEBroker, version string) (*gin.Engine, error) {
 
 	gin.SetMode("release")
 
@@ -92,7 +92,7 @@ func CreateApi(log *gologger.Logger, haConfig *haproxy.Config, haRuntime *haprox
 		/*
 		   Info
 		*/
-		v1.GET("/info", GetInfo)
+		v1.GET("/info", InfoMiddleWare(version), GetInfo)
 
 		/*
 			Debug helpers

@@ -34,7 +34,7 @@ func TestApi_CreateAPI(t *testing.T) {
 	haConfig := haproxy.Config{TemplateFile: TEMPLATE_FILE, ConfigFile: CONFIG_FILE, JsonFile: JSON_FILE, PidFile: PID_FILE}
 	haRuntime := haproxy.Runtime{Binary: helpers.HaproxyLocation()}
 
-	if _, err := CreateApi(log, &haConfig, &haRuntime, sseBroker); err != nil {
+	if _, err := CreateApi(log, &haConfig, &haRuntime, sseBroker, "v.test"); err != nil {
 		t.Errorf("Failed to create API")
 	}
 
