@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/magneticio/vamp-router",
 	"GoVersion": "go1.4.1",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Shopify/sarama",
