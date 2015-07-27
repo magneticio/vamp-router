@@ -206,7 +206,7 @@ func (r *Runtime) GetStats(statsType string) (map[string]map[string]string, erro
 func (r *Runtime) cmd(cmd string) (string, error) {
 
 	// connect to haproxy
-	conn, err_conn := net.Dial("unix", "/tmp/haproxy.stats.sock")
+	conn, err_conn := net.Dial("unix", r.SockFile)
 	defer conn.Close()
 
 	if err_conn != nil {

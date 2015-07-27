@@ -50,7 +50,10 @@ func (s *Streamer) Start() error {
 
 	for {
 		// start pumping the stats into the channel
-		stats, _ := s.haRuntime.GetStats("all")
+		stats, err := s.haRuntime.GetStats("all")
+		if err != nil {
+			s.Log.Error(err.Error())
+		}
 		statsChannel <- stats
 		time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
 	}

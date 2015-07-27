@@ -56,7 +56,7 @@ func TestRuntime_HaproxyFunctions(t *testing.T) {
 	}
 
 	err = ioutil.WriteFile("/tmp/haproxy_test.cfg", test_config_file, 0664)
-	defer os.Remove("/tmp/haproxy_test.cfg")
+	// defer os.Remove("/tmp/haproxy_test.cfg")
 	if err != nil {
 		t.Fatal(err.Error())
 	}

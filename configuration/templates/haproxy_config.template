@@ -3,7 +3,7 @@ global
 
  daemon
  maxconn 4096
- stats socket /tmp/haproxy.stats.sock level admin
+ stats socket {{.SockFile}} level admin
 
 
  ###
@@ -175,8 +175,8 @@ backend {{.Name}}
 
 {{end}}
 
-### END GENERATED SECTION ###
-
 backend abusers
     mode http
-    errorfile 409 configuration/error_pages/500rate.http
+    errorfile 409 {{ .ErrorPagesDir}}500rate.http
+
+### END GENERATED SECTION ###

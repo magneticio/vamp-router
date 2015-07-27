@@ -11,42 +11,46 @@ import (
 	"github.com/magneticio/vamp-router/zookeeper"
 	gologger "github.com/op/go-logging"
 	"os"
+	"path/filepath"
 	"strconv"
+)
+
+const (
+	templateFile  = "templates/haproxy_config.template"
+	configFile    = "haproxy_new.cfg"
+	jsonFile      = "vamp_router.json"
+	pidFile       = "haproxy-private.pid"
+	sockFile      = "haproxy.stats.sock"
+	errorPagesDir = "error_pages/"
 )
 
 var (
 	// Set all commandline arguments
-	port             int
-	logPath          string
-	configFilePath   string
-	templateFilePath string
-	jsonFilePath     string
-	binaryPath       string
-	kafkaHost        string
-	kafkaPort        int
-	zooConString     string
-	zooConKey        string
-	pidFilePath      string
-	headless         bool
-	log              *gologger.Logger
-	stream           metrics.Streamer
-	workDir          helpers.WorkDir
-	customWorkDir    string
+	port          int
+	logPath       string
+	configPath    string
+	binaryPath    string
+	kafkaHost     string
+	kafkaPort     int
+	zooConString  string
+	zooConKey     string
+	headless      bool
+	log           *gologger.Logger
+	stream        metrics.Streamer
+	workDir       helpers.WorkDir
+	customWorkDir string
 )
 
 func init() {
 	flag.IntVar(&port, "port", 10001, "Port/IP to use for the REST interface. Overrides $PORT0 env variable")
-	flag.StringVar(&logPath, "logPath", "/logs/vamp-router.log", "Location of the log file")
-	flag.StringVar(&configFilePath, "configFile", "/haproxy_new.cfg", "Target location of the generated HAproxy config file")
-	flag.StringVar(&templateFilePath, "template", "configuration/templates/haproxy_config.template", "Template file to build HAproxy config")
-	flag.StringVar(&jsonFilePath, "json", "/vamp_router.json", "JSON file to store internal config.")
+	flag.StringVar(&logPath, "logPath", "/var/log/vamp-router/vamp-router.log", "Location of the log file")
+	flag.StringVar(&configPath, "configPath", "", "Location of configuration files, defaults to configuration/")
 	flag.StringVar(&binaryPath, "binary", helpers.HaproxyLocation(), "Path to the HAproxy binary")
 	flag.StringVar(&kafkaHost, "kafkaHost", "", "The hostname or ip address of the Kafka host")
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")
 	flag.StringVar(&zooConString, "zooConString", "", "A zookeeper ensemble connection string")
 	flag.StringVar(&zooConKey, "zooConKey", "magneticio/vamplb", "Zookeeper root key")
-	flag.StringVar(&pidFilePath, "pidFile", "/haproxy-private.pid", "Location of the HAproxy PID file")
-	flag.StringVar(&customWorkDir, "customWorkDir", "", "Custom working directory for logs, configs and sockets")
+	flag.StringVar(&customWorkDir, "customWorkDir", "/var/run/", "Custom working directory for sockets and pid files")
 	flag.BoolVar(&headless, "headless", false, "Run without any logging output to the console")
 }
 
@@ -57,15 +61,12 @@ func main() {
 	// resolve flags and environment variables
 	tools.SetValueFromEnv(&port, "VAMP_RT_PORT")
 	tools.SetValueFromEnv(&logPath, "VAMP_RT_LOG_PATH")
-	tools.SetValueFromEnv(&configFilePath, "VAMP_RT_CONFIG_PATH")
-	tools.SetValueFromEnv(&templateFilePath, "VAMP_RT_TEMPLATE_PATH")
-	tools.SetValueFromEnv(&jsonFilePath, "VAMP_RT_JSON_PATH")
+	tools.SetValueFromEnv(&configPath, "VAMP_RT_CONFIG_PATH")
 	tools.SetValueFromEnv(&binaryPath, "VAMP_RT_BINARY_PATH")
 	tools.SetValueFromEnv(&kafkaHost, "VAMP_RT_KAFKA_HOST")
 	tools.SetValueFromEnv(&kafkaPort, "VAMP_RT_KAFKA_PORT")
 	tools.SetValueFromEnv(&zooConString, "VAMP_RT_ZOO_STRING")
 	tools.SetValueFromEnv(&zooConKey, "VAMP_RT_ZOO_KEY")
-	tools.SetValueFromEnv(&pidFilePath, "VAMP_RT_PID_PATH")
 	tools.SetValueFromEnv(&customWorkDir, "VAMP_RT_CUSTOM_WORKDIR")
 	tools.SetValueFromEnv(&headless, "VAMP_RT_HEADLESS")
 
@@ -75,7 +76,7 @@ func main() {
 	}
 
 	// setup logging
-	log = logging.ConfigureLog(workDir.Dir()+logPath, headless)
+	log = logging.ConfigureLog(logPath, headless)
 	log.Info(logging.PrintLogo(Version))
 
 	/*
@@ -83,22 +84,37 @@ func main() {
 	*/
 
 	// setup Haproxy runtime
-	haRuntime := haproxy.Runtime{Binary: binaryPath}
-
-	// setup Configuration
-	haConfig := haproxy.Config{TemplateFile: templateFilePath,
-		ConfigFile: workDir.Dir() + configFilePath,
-		JsonFile:   workDir.Dir() + jsonFilePath,
-		PidFile:    workDir.Dir() + pidFilePath,
-		WorkingDir: workDir.Dir(),
+	haRuntime := haproxy.Runtime{
+		Binary:   binaryPath,
+		SockFile: workDir.Dir() + sockFile,
 	}
 
-	log.Notice("Attempting to load config at %s", workDir.Dir()+configFilePath)
+	// setup configuration. Use custom path if provided, otherwise use install dir
+	if len(configPath) == 0 {
+		installDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			configPath = installDir + "/configuration/"
+		}
+	}
+
+	haConfig := haproxy.Config{
+		TemplateFile:  configPath + templateFile,
+		ConfigFile:    configPath + configFile,
+		JsonFile:      configPath + jsonFile,
+		ErrorPagesDir: configPath + errorPagesDir,
+		PidFile:       workDir.Dir() + pidFile,
+		SockFile:      workDir.Dir() + sockFile,
+		WorkingDir:    workDir.Dir(),
+	}
+
+	log.Notice("Attempting to load config at %s", configPath)
 	// load config from disk
 	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
 
 	if err != nil {
-		log.Notice("Did not find a config...initialzing empty config")
+		log.Notice("Did not find a config...initializing empty config")
 		haConfig.InitializeConfig()
 	}
 
@@ -111,7 +127,7 @@ func main() {
 
 	// set the Pid file
 	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
-		log.Notice("Pidfile exists at %s, proceeding...", workDir.Dir()+pidFilePath)
+		log.Notice("Pidfile exists at %s, proceeding...", workDir.Dir()+pidFile)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
