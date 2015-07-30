@@ -471,7 +471,7 @@ Run `--help` for all options and their defaults:
 Usage of ./vamp-router:
   -binary="/usr/local/sbin/haproxy": Path to the HAproxy binary
   -configPath="": Location of configuration files, defaults to configuration/
-  -customWorkDir="/var/run/": Custom working directory for sockets and pid files
+  -customWorkDir="": Custom working directory for sockets and pid files, default to data/
   -headless=false: Run without any logging output to the console
   -kafkaHost="": The hostname or ip address of the Kafka host
   -kafkaPort=9092: The port of the Kafka host
