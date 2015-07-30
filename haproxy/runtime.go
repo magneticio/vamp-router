@@ -131,6 +131,13 @@ func (r *Runtime) GetJsonStats(statsType string) ([]Stats, error) {
 	var Stats []Stats
 	var cmdString string
 
+	defer func() error {
+		if r := recover(); r != nil {
+			return errors.New("Cannot read from Haproxy socket")
+		}
+		return nil
+	}()
+
 	switch statsType {
 	case "all":
 		cmdString = "show stat -1\n"

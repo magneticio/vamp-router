@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	haRuntime = Runtime{Binary: helpers.HaproxyLocation()}
+	haRuntime = Runtime{Binary: helpers.HaproxyLocation(), SockFile: "/tmp/haproxy.stat.sock"}
 )
 
 func TestRuntime_SetNewPid(t *testing.T) {
@@ -40,9 +40,7 @@ func TestRuntime_UseExistingPid(t *testing.T) {
 func TestRuntime_HaproxyFunctions(t *testing.T) {
 
 	/*
-
 		Preamble to set up and tear down haproxy
-
 	*/
 
 	//create a pid file
@@ -64,6 +62,8 @@ func TestRuntime_HaproxyFunctions(t *testing.T) {
 	/*
 	 Start actual tests
 	*/
+
+	//TODO: configure runtime with socket
 
 	// run first time, pid should be empty
 	haConfig.ConfigFile = "/tmp/haproxy_test.cfg"

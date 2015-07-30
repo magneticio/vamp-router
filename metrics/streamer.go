@@ -34,11 +34,31 @@ func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int, log *gologger
 	s.Clients = make(map[chan Metric]bool)
 }
 
+// simple wrapper for the actual start command.
+func (s *Streamer) Start() error {
+
+	defer s.StartProtected()
+
+	s.StartProtected()
+
+	return nil
+}
+
 /*
   Generates an outgoing stream of discrete Metric struct values.
   This stream can then be consumed by other streams like Kafka or SSE.
+  It also protects against crashes by recovering panics and restarting
+  the routine again.
 */
-func (s *Streamer) Start() error {
+func (s *Streamer) StartProtected() error {
+
+	defer func() {
+		if r := recover(); r != nil {
+			s.Log.Error("Cannot read from Haproxy socket, retrying in 5 seconds")
+			time.Sleep(5000 * time.Millisecond)
+			s.StartProtected()
+		}
+	}()
 
 	s.Heartbeat()
 
@@ -57,6 +77,7 @@ func (s *Streamer) Start() error {
 		statsChannel <- stats
 		time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
 	}
+	return nil
 }
 
 /*

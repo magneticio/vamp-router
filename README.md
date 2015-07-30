@@ -465,19 +465,22 @@ For an explanation of the metric types, please read [this](http://cbonte.github.
  
 ### Startup Flags & Options
 
-      -binary="/usr/local/sbin/haproxy":                Path to the HAproxy binary
-      -customWorkDir="":                                Custom working directory for logs, configs and sockets
-      -kafkaHost="":                                    The hostname or ip address of the Kafka host
-      -kafkaPort=9092:                                  The port of the Kafka host
-      -configFile="/haproxy_new.cfg":                 Target location of the generated HAproxy config file
-      -json="/vamp_router.json":                JSON file to store internal config.
-      -template="configuration/templates/haproxy_config.template": Template file to build HAproxy config
-      -logPath="/logs/vamp-router.log":           Location of the log file
-      -pidFile="/haproxy-private.pid":                  Location of the HAproxy PID file
-      -port=10001:                                      Port/IP to use for the REST interface.
-      -zooConKey="magneticio/vamplb":                   Zookeeper root key
-      -zooConString="":                                 A zookeeper ensemble connection string
-    
+Run `--help` for all options and their defaults:
+
+```
+Usage of ./vamp-router:
+  -binary="/usr/local/sbin/haproxy": Path to the HAproxy binary
+  -configPath="": Location of configuration files, defaults to configuration/
+  -customWorkDir="/var/run/": Custom working directory for sockets and pid files
+  -headless=false: Run without any logging output to the console
+  -kafkaHost="": The hostname or ip address of the Kafka host
+  -kafkaPort=9092: The port of the Kafka host
+  -logPath="/var/log/vamp-router/vamp-router.log": Location of the log file
+  -port=10001: Port/IP to use for the REST interface. Overrides $PORT0 env variable
+  -zooConKey="magneticio/vamplb": Zookeeper root key
+  -zooConString="": A zookeeper ensemble connection string
+```  
+
 ### Installing: the harder custom build way
 
 Install HAproxy 1.5 or greater in whatever way you like. Just make sure the `haproxy` executable is in your `PATH`. For Ubuntu, use:

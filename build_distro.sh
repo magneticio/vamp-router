@@ -50,6 +50,7 @@ for GOOS in darwin linux windows; do
         mv ${PACKAGE}.exe ./target/dist/tmp
     else
         mv ${PACKAGE} ./target/dist/tmp
+        chmod +x ./target/dist/tmp/${PACKAGE}
     fi
 
     cp -r ./configuration ./target/dist/tmp
@@ -66,7 +67,7 @@ done
 # remove the last tmp dir
 rm -rf ./target/dist/tmp
 
-# Upload
+# # Upload
 cd target/dist
 
 for DISTRIBUTABLE in *.zip ; do

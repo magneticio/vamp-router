@@ -174,7 +174,6 @@ func main() {
 
 	sseBroker.In(sseChannel)
 	sseBroker.Start()
-
 	go stream.Start()
 
 	/*
