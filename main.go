@@ -50,7 +50,7 @@ func init() {
 	flag.IntVar(&kafkaPort, "kafkaPort", 9092, "The port of the Kafka host")
 	flag.StringVar(&zooConString, "zooConString", "", "A zookeeper ensemble connection string")
 	flag.StringVar(&zooConKey, "zooConKey", "magneticio/vamplb", "Zookeeper root key")
-	flag.StringVar(&customWorkDir, "customWorkDir", "/var/run/", "Custom working directory for sockets and pid files")
+	flag.StringVar(&customWorkDir, "customWorkDir", "", "Custom working directory for sockets and pid files, default to data/")
 	flag.BoolVar(&headless, "headless", false, "Run without any logging output to the console")
 }
 
@@ -70,9 +70,17 @@ func main() {
 	tools.SetValueFromEnv(&customWorkDir, "VAMP_RT_CUSTOM_WORKDIR")
 	tools.SetValueFromEnv(&headless, "VAMP_RT_HEADLESS")
 
-	//create working dir if not already there
-	if err := workDir.Create(customWorkDir); err != nil {
-		panic(err)
+	// setup working dir. Use custom path if provided, otherwise use install dir as root
+	if len(customWorkDir) == 0 {
+		installDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			customWorkDir = installDir + "/data/"
+		}
+		if err := workDir.Create(customWorkDir); err != nil {
+			panic(err)
+		}
 	}
 
 	// setup logging
