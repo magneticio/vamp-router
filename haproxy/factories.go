@@ -73,7 +73,7 @@ func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
 		Name:          name,
 		Host:          "",
 		Port:          0,
-		UnixSock:      compileSocketName(c.WorkingDir+"/sockets/", name, ".sock"),
+		UnixSock:      compileSocketName(c.WorkingDir+"/vamp.", name, ".sock"),
 		Weight:        weight,
 		MaxConn:       1000,
 		Check:         false,
@@ -82,7 +82,6 @@ func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
 }
 
 func compileSocketName(prefix string, base string, postfix string) string {
-
 	if len(base) == 0 {
 		return (prefix + tools.GetMD5Hash(tools.GetUUID()) + postfix)
 	}

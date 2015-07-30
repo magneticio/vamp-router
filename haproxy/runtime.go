@@ -131,6 +131,13 @@ func (r *Runtime) GetJsonStats(statsType string) ([]Stats, error) {
 	var Stats []Stats
 	var cmdString string
 
+	defer func() error {
+		if r := recover(); r != nil {
+			return errors.New("Cannot read from Haproxy socket")
+		}
+		return nil
+	}()
+
 	switch statsType {
 	case "all":
 		cmdString = "show stat -1\n"
@@ -206,7 +213,7 @@ func (r *Runtime) GetStats(statsType string) (map[string]map[string]string, erro
 func (r *Runtime) cmd(cmd string) (string, error) {
 
 	// connect to haproxy
-	conn, err_conn := net.Dial("unix", "/tmp/haproxy.stats.sock")
+	conn, err_conn := net.Dial("unix", r.SockFile)
 	defer conn.Close()
 
 	if err_conn != nil {

@@ -50,6 +50,7 @@ for GOOS in darwin linux windows; do
         mv ${PACKAGE}.exe ./target/dist/tmp
     else
         mv ${PACKAGE} ./target/dist/tmp
+        chmod +x ./target/dist/tmp/${PACKAGE}
     fi
 
     cp -r ./configuration ./target/dist/tmp
@@ -77,7 +78,3 @@ for DISTRIBUTABLE in *.zip ; do
      -H "X-Bintray-Publish:1" \
      https://api.bintray.com/content/magnetic-io/downloads/${PACKAGE}/${DISTRIBUTABLE}   
 done
-
-
-
-

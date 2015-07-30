@@ -76,21 +76,24 @@ type ServerDetail struct {
 }
 
 type Runtime struct {
-	Binary string
+	Binary   string
+	SockFile string
 }
 
 // Main configuration object for load balancers. This contains all variables and is passed to
 // the templating engine.
 type Config struct {
-	Frontends    []*Frontend   `json:"frontends" binding:"required"`
-	Backends     []*Backend    `json:"backends" binding:"required"`
-	Routes       []Route       `json:"routes" binding:"required"`
-	PidFile      string        `json:"-"`
-	Mutex        *sync.RWMutex `json:"-"`
-	TemplateFile string        `json:"-"`
-	ConfigFile   string        `json:"-"`
-	JsonFile     string        `json:"-"`
-	WorkingDir   string        `json:"-"`
+	Frontends     []*Frontend   `json:"frontends" binding:"required"`
+	Backends      []*Backend    `json:"backends" binding:"required"`
+	Routes        []Route       `json:"routes" binding:"required"`
+	PidFile       string        `json:"-"`
+	SockFile      string        `json:"-"`
+	Mutex         *sync.RWMutex `json:"-"`
+	TemplateFile  string        `json:"-"`
+	ConfigFile    string        `json:"-"`
+	JsonFile      string        `json:"-"`
+	WorkingDir    string        `json:"-"`
+	ErrorPagesDir string        `json:"-"`
 }
 
 // Defines a single haproxy "backend".

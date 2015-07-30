@@ -7,8 +7,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Shopify/sarama",
-			"Comment": "v1.4.2",
-			"Rev": "d546818f24718ecca1fe4c84c2b834109746da86"
+			"Comment": "v1.4.3",
+			"Rev": "2b0d726b296a33715f7f970f006a80c7bfc8a2e8"
 		},
 		{
 			"ImportPath": "github.com/asaskevich/govalidator",
@@ -29,10 +29,6 @@
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v0.4-16-g28b9ff9",
 			"Rev": "28b9ff9e3495dabeaea2da86c100effbf1a68346"
-		},
-		{
-			"ImportPath": "github.com/golang/snappy/snappy",
-			"Rev": "a911026e1ffa84898778ccb0363930485e0aa880"
 		},
 		{
 			"ImportPath": "github.com/julienschmidt/httprouter",
