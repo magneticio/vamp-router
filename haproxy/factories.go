@@ -73,7 +73,7 @@ func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
 		Name:          name,
 		Host:          "",
 		Port:          0,
-		UnixSock:      compileSocketName(c.WorkingDir+"/vamp.", name, ".sock"),
+		UnixSock:      compileSocketName(c.WorkingDir+"vamp.", name, ".sock"),
 		Weight:        weight,
 		MaxConn:       1000,
 		Check:         false,

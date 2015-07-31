@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	templateFile  = "templates/haproxy_config.template"
-	configFile    = "haproxy_new.cfg"
-	jsonFile      = "vamp_router.json"
-	pidFile       = "haproxy-private.pid"
-	sockFile      = "haproxy.stats.sock"
-	errorPagesDir = "error_pages/"
+	templateFile   = "templates/haproxy_config.template"
+	configFile     = "haproxy_new.cfg"
+	jsonFile       = "vamp_router.json"
+	pidFile        = "haproxy-private.pid"
+	sockFile       = "haproxy.stats.sock"
+	errorPagesDir  = "error_pages/"
+	maxWorkDirSize = 50 // this value is based on (max socket path size - md5 hash length - pre and postfixes)
 )
 
 var (
@@ -70,22 +71,30 @@ func main() {
 	tools.SetValueFromEnv(&customWorkDir, "VAMP_RT_CUSTOM_WORKDIR")
 	tools.SetValueFromEnv(&headless, "VAMP_RT_HEADLESS")
 
-	// setup working dir. Use custom path if provided, otherwise use install dir as root
+	// setup logging
+	log = logging.ConfigureLog(logPath, headless)
+	log.Info(logging.PrintLogo(Version))
+
+	// 	Setup working dir. Use custom path if provided, otherwise use install dir as root.
+
 	if len(customWorkDir) == 0 {
+
 		installDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			customWorkDir = installDir + "/data/"
+			customWorkDir = filepath.Join(installDir, "/data/")
 		}
-		if err := workDir.Create(customWorkDir); err != nil {
-			panic(err)
+		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+
+		log.Notice("Creating custom workdir: " + customWorkDir)
+		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	// setup logging
-	log = logging.ConfigureLog(logPath, headless)
-	log.Info(logging.PrintLogo(Version))
 
 	/*
 		HAproxy runtime and configuration setup
