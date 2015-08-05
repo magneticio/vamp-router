@@ -76,5 +76,6 @@ for DISTRIBUTABLE in *.zip ; do
      -H "X-Bintray-Package:${PACKAGE}" \
      -H "X-Bintray-Version:${VERSION}" \
      -H "X-Bintray-Publish:1" \
+     -H "X-Bintray-Override:1" \
      https://api.bintray.com/content/magnetic-io/downloads/${PACKAGE}/${DISTRIBUTABLE}   
 done

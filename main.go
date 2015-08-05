@@ -21,7 +21,7 @@ const (
 	jsonFile       = "vamp_router.json"
 	pidFile        = "haproxy-private.pid"
 	sockFile       = "haproxy.stats.sock"
-	errorPagesDir  = "error_pages/"
+	errorPagesDir  = "error_pages"
 	maxWorkDirSize = 50 // this value is based on (max socket path size - md5 hash length - pre and postfixes)
 )
 
@@ -100,10 +100,11 @@ func main() {
 		HAproxy runtime and configuration setup
 	*/
 
+	// TODO: refactor haRuntime struct to just include haConfig
 	// setup Haproxy runtime
 	haRuntime := haproxy.Runtime{
 		Binary:   binaryPath,
-		SockFile: workDir.Dir() + sockFile,
+		SockFile: filepath.Join(workDir.Dir(), "/", sockFile),
 	}
 
 	// setup configuration. Use custom path if provided, otherwise use install dir
@@ -112,23 +113,23 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			configPath = installDir + "/configuration/"
+			configPath = filepath.Join(installDir, "configuration", "/")
 		}
 	}
 
 	haConfig := haproxy.Config{
-		TemplateFile:  configPath + templateFile,
-		ConfigFile:    configPath + configFile,
-		JsonFile:      configPath + jsonFile,
-		ErrorPagesDir: configPath + errorPagesDir,
-		PidFile:       workDir.Dir() + pidFile,
-		SockFile:      workDir.Dir() + sockFile,
-		WorkingDir:    workDir.Dir(),
+		TemplateFile:  filepath.Join(configPath, templateFile),
+		ConfigFile:    filepath.Join(configPath, configFile),
+		JsonFile:      filepath.Join(configPath, jsonFile),
+		ErrorPagesDir: filepath.Join(configPath, errorPagesDir, "/"),
+		PidFile:       filepath.Join(workDir.Dir(), "/", pidFile),
+		SockFile:      filepath.Join(workDir.Dir(), "/", sockFile),
+		WorkingDir:    filepath.Join(workDir.Dir() + "/"),
 	}
 
 	log.Notice("Attempting to load config at %s", configPath)
 	// load config from disk
-	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
+	err := haConfig.GetConfigFromDisk()
 
 	if err != nil {
 		log.Notice("Did not find a config...initializing empty config")
@@ -144,7 +145,7 @@ func main() {
 
 	// set the Pid file
 	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
-		log.Notice("Pidfile exists at %s, proceeding...", workDir.Dir()+pidFile)
+		log.Notice("Pidfile exists at %s, proceeding...", haConfig.PidFile)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
