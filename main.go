@@ -83,14 +83,14 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			customWorkDir = filepath.Join(installDir, "/data/")
+			customWorkDir = filepath.Join(installDir, "/data")
 		}
 		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
 			log.Fatal(err)
 		}
 	} else {
 
-		log.Notice("Creating custom workdir: " + customWorkDir)
+		log.Notice("Using custom workdir: " + customWorkDir)
 		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
 			log.Fatal(err)
 		}
