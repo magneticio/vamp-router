@@ -10,7 +10,6 @@ const (
 
 func BenchmarkMetrics_ParseMetrics(b *testing.B) {
 
-	var counter int64
 	wantedMetrics := []string{"scur", "qcur", "qmax", "smax", "slim", "econ,", "status", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	m := make(map[chan Metric]bool)
 	c := make(chan Metric)
@@ -20,14 +19,13 @@ func BenchmarkMetrics_ParseMetrics(b *testing.B) {
 	statsChannel := make(chan map[string]map[string]string)
 
 	for n := 0; n < b.N; n++ {
-		go ParseMetrics(statsChannel, m, wantedMetrics, &counter)
+		go ParseMetrics(statsChannel, m, wantedMetrics)
 		statsChannel <- testdata
 	}
 }
 
 func TestMetrics_ParseMetrics(t *testing.T) {
 
-	var counter int64
 	wantedMetrics := []string{"scur", "qcur", "qmax", "smax", "slim", "econ,", "status", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
 	m := make(map[chan Metric]bool)
 	c := make(chan Metric)
@@ -36,7 +34,7 @@ func TestMetrics_ParseMetrics(t *testing.T) {
 	testdata := getMapofMetrics()
 	statsChannel := make(chan map[string]map[string]string)
 
-	go ParseMetrics(statsChannel, m, wantedMetrics, &counter)
+	go ParseMetrics(statsChannel, m, wantedMetrics)
 
 	statsChannel <- testdata
 

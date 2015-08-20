@@ -47,35 +47,33 @@ func (b *SSEBroker) In(c chan Metric) {
 //
 func (b *SSEBroker) Start() {
 
-	go func() {
-		for {
+	for {
 
-			// Block until we receive from one of the
-			// three following channels.
-			select {
+		// Block until we receive from one of the
+		// three following channels.
+		select {
 
-			case s := <-b.NewClients:
+		case s := <-b.NewClients:
 
-				// There is a new client attached and we
-				// want to start sending them messages.
-				b.Clients[s] = true
-				b.Log.Notice("Added new SSE stream client")
+			// There is a new client attached and we
+			// want to start sending them messages.
+			b.Clients[s] = true
+			b.Log.Notice("Added new SSE stream client")
 
-			case s := <-b.DefunctClients:
+		case s := <-b.DefunctClients:
 
-				// A client has dettached and we want to
-				// stop sending them messages.
-				delete(b.Clients, s)
-				b.Log.Notice("Removed SSE stream client")
+			// A client has dettached and we want to
+			// stop sending them messages.
+			delete(b.Clients, s)
+			b.Log.Notice("Removed SSE stream client")
 
-			case metric := <-b.MetricsChannel:
+		case metric := <-b.MetricsChannel:
 
-				for s, _ := range b.Clients {
-					s <- metric
-				}
+			for s, _ := range b.Clients {
+				s <- metric
 			}
 		}
-	}()
+	}
 }
 
 // This SSEBroker method handles and HTTP request at the "/events/" URL.
@@ -92,7 +90,7 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Create a new channel, over which the SSEBroker can
 	// send this client messages.
-	messageChan := make(chan Metric)
+	messageChan := make(chan Metric, 1000)
 
 	// Add this client to the map of those that should
 	// receive updates
@@ -122,7 +120,7 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "event: router-metric\ndata: %s\n\n", json)
 
 		// Flush the response.  This is only possible if
-		// the repsonse supports streaming.
+		// the reponse supports streaming.
 		f.Flush()
 	}
 

@@ -2,9 +2,7 @@ package helpers
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	// "path/filepath"
 	"strconv"
 )
 
@@ -31,7 +29,6 @@ func (w *WorkDir) Create(dir string, max_size int) error {
 				return errors.New("Could not create working directory at " + dir + ", exiting...")
 			} else {
 				w.dir = dir
-				fmt.Println("workdir is", w.dir)
 				return nil
 			}
 		} else {
@@ -39,6 +36,5 @@ func (w *WorkDir) Create(dir string, max_size int) error {
 		}
 	}
 	w.dir = dir
-	fmt.Println("workdir is", w.dir)
 	return nil
 }

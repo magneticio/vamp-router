@@ -37,7 +37,6 @@ var (
 	zooConKey     string
 	headless      bool
 	log           *gologger.Logger
-	stream        metrics.Streamer
 	workDir       helpers.WorkDir
 	customWorkDir string
 )
@@ -163,14 +162,15 @@ func main() {
 
 	log.Notice("Initializing metric streams...")
 
+	Stream := metrics.NewStreamer(&haRuntime, 3000, log)
 	// Initialize the stream from a runtime
-	stream.Init(&haRuntime, 3000, log)
+	// stream.Init(&haRuntime, 3000, log)
 
 	// Setup Kafka if required
 	if len(kafkaHost) > 0 {
 
 		kafkaChannel := make(chan metrics.Metric)
-		stream.AddClient(kafkaChannel)
+		Stream.AddClient(kafkaChannel)
 
 		kafka := metrics.KafkaProducer{Log: log}
 		kafka.In(kafkaChannel)
@@ -178,8 +178,8 @@ func main() {
 
 	}
 
-	sseChannel := make(chan metrics.Metric)
-	stream.AddClient(sseChannel)
+	sseChannel := make(chan metrics.Metric, 1000)
+	Stream.AddClient(sseChannel)
 
 	// Always setup SSE Stream
 	sseBroker := &metrics.SSEBroker{
@@ -191,8 +191,8 @@ func main() {
 	}
 
 	sseBroker.In(sseChannel)
-	sseBroker.Start()
-	go stream.Start()
+	go sseBroker.Start()
+	go Stream.Start()
 
 	/*
 		Zookeeper setup
