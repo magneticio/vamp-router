@@ -75,7 +75,7 @@ func (s *Streamer) StartProtected() {
 	Parses a []Stats and injects it into each Metric channel in a map of channels
 */
 
-func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Metric]bool, wantedMetrics []string) {
+func ParseMetrics(statsChannel chan map[string]map[string]string, clients map[chan Metric]bool, wantedMetrics []string) {
 
 	wantedFrontendMetric := make(map[string]bool)
 	wantedFrontendMetric["ereq"] = true
@@ -84,11 +84,8 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 	wantedFrontendMetric["req_rate"] = true
 
 	for {
-
 		select {
-
 		case stats := <-statsChannel:
-
 			localTime := time.Now().Format(time.RFC3339)
 
 			// for each proxy in the stats dump, pick out the wanted metrics.
@@ -116,7 +113,7 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 							case len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND"):
 								tags = append(tags, "routes:"+proxy["pxname"], "route")
 
-								EmitMetric(localTime, tags, metric, value, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 
 							//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
 							// server that routes to the actual service via a socket.
@@ -130,12 +127,12 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 							//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
 							case len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND"):
 								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "service")
-								EmitMetric(localTime, tags, metric, value, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 
 							//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
 							case len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND"):
 								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "servers:"+svname, "server")
-								EmitMetric(localTime, tags, metric, value, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 							}
 						}
 					}
@@ -146,14 +143,14 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 	}
 }
 
-func EmitMetric(time string, tags []string, metric string, value string, c map[chan Metric]bool) {
+func EmitMetric(time string, tags []string, metric string, value string, clients map[chan Metric]bool) {
 	tags = append(tags, "metrics:"+metric)
 	_type := "router-metric"
 	metricValue, _ := strconv.Atoi(value)
 
 	//debug
 	// fmt.Println("%v => metric %v m: %v\n", time, tags[0], metricValue)
-	for s, _ := range c {
+	for s, _ := range clients {
 		s <- Metric{tags, metricValue, time, _type}
 	}
 }

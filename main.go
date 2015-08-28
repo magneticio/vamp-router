@@ -127,7 +127,6 @@ func main() {
 	}
 
 	log.Notice("Attempting to load config at %s", configPath)
-	// load config from disk
 	err := haConfig.GetConfigFromDisk()
 
 	if err != nil {
@@ -135,21 +134,18 @@ func main() {
 		haConfig.InitializeConfig()
 	}
 
-	// Render initial config
 	err = haConfig.Render()
 	if err != nil {
 		log.Fatal("Could not render initial config, exiting...")
 		os.Exit(1)
 	}
 
-	// set the Pid file
 	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
 		log.Notice("Pidfile exists at %s, proceeding...", haConfig.PidFile)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
 
-	// start or reload
 	err = haRuntime.Reload(&haConfig)
 	if err != nil {
 		log.Fatal("Error while reloading haproxy: " + err.Error())
@@ -178,7 +174,7 @@ func main() {
 
 	}
 
-	sseChannel := make(chan metrics.Metric, 1000)
+	sseChannel := make(chan metrics.Metric, 10000)
 	Stream.AddClient(sseChannel)
 
 	// Always setup SSE Stream
@@ -190,7 +186,6 @@ func main() {
 		log,
 	}
 
-	sseBroker.In(sseChannel)
 	go sseBroker.Start()
 	go Stream.Start()
 
