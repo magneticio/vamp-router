@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	templateFile  = "templates/haproxy_config.template"
-	configFile    = "haproxy_new.cfg"
-	jsonFile      = "vamp_router.json"
-	pidFile       = "haproxy-private.pid"
-	sockFile      = "haproxy.stats.sock"
-	errorPagesDir = "error_pages/"
+	templateFile   = "templates/haproxy_config.template"
+	configFile     = "haproxy_new.cfg"
+	jsonFile       = "vamp_router.json"
+	pidFile        = "haproxy-private.pid"
+	sockFile       = "haproxy.stats.sock"
+	errorPagesDir  = "error_pages"
+	maxWorkDirSize = 50 // this value is based on (max socket path size - md5 hash length - pre and postfixes)
 )
 
 var (
@@ -36,7 +37,6 @@ var (
 	zooConKey     string
 	headless      bool
 	log           *gologger.Logger
-	stream        metrics.Streamer
 	workDir       helpers.WorkDir
 	customWorkDir string
 )
@@ -70,31 +70,40 @@ func main() {
 	tools.SetValueFromEnv(&customWorkDir, "VAMP_RT_CUSTOM_WORKDIR")
 	tools.SetValueFromEnv(&headless, "VAMP_RT_HEADLESS")
 
-	// setup working dir. Use custom path if provided, otherwise use install dir as root
+	// setup logging
+	log = logging.ConfigureLog(logPath, headless)
+	log.Info(logging.PrintLogo(Version))
+
+	// 	Setup working dir. Use custom path if provided, otherwise use install dir as root.
+
 	if len(customWorkDir) == 0 {
+
 		installDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			customWorkDir = installDir + "/data/"
+			customWorkDir = filepath.Join(installDir, "/data")
 		}
-		if err := workDir.Create(customWorkDir); err != nil {
-			panic(err)
+		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+
+		log.Notice("Using custom workdir: " + customWorkDir)
+		if err := workDir.Create(customWorkDir, maxWorkDirSize); err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	// setup logging
-	log = logging.ConfigureLog(logPath, headless)
-	log.Info(logging.PrintLogo(Version))
 
 	/*
 		HAproxy runtime and configuration setup
 	*/
 
+	// TODO: refactor haRuntime struct to just include haConfig
 	// setup Haproxy runtime
 	haRuntime := haproxy.Runtime{
 		Binary:   binaryPath,
-		SockFile: workDir.Dir() + sockFile,
+		SockFile: filepath.Join(workDir.Dir(), "/", sockFile),
 	}
 
 	// setup configuration. Use custom path if provided, otherwise use install dir
@@ -103,44 +112,40 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			configPath = installDir + "/configuration/"
+			configPath = filepath.Join(installDir, "configuration", "/")
 		}
 	}
 
 	haConfig := haproxy.Config{
-		TemplateFile:  configPath + templateFile,
-		ConfigFile:    configPath + configFile,
-		JsonFile:      configPath + jsonFile,
-		ErrorPagesDir: configPath + errorPagesDir,
-		PidFile:       workDir.Dir() + pidFile,
-		SockFile:      workDir.Dir() + sockFile,
-		WorkingDir:    workDir.Dir(),
+		TemplateFile:  filepath.Join(configPath, templateFile),
+		ConfigFile:    filepath.Join(configPath, configFile),
+		JsonFile:      filepath.Join(configPath, jsonFile),
+		ErrorPagesDir: filepath.Join(configPath, errorPagesDir, "/"),
+		PidFile:       filepath.Join(workDir.Dir(), "/", pidFile),
+		SockFile:      filepath.Join(workDir.Dir(), "/", sockFile),
+		WorkingDir:    filepath.Join(workDir.Dir() + "/"),
 	}
 
 	log.Notice("Attempting to load config at %s", configPath)
-	// load config from disk
-	err := haConfig.GetConfigFromDisk(haConfig.JsonFile)
+	err := haConfig.GetConfigFromDisk()
 
 	if err != nil {
 		log.Notice("Did not find a config...initializing empty config")
 		haConfig.InitializeConfig()
 	}
 
-	// Render initial config
 	err = haConfig.Render()
 	if err != nil {
 		log.Fatal("Could not render initial config, exiting...")
 		os.Exit(1)
 	}
 
-	// set the Pid file
 	if err := haRuntime.SetPid(haConfig.PidFile); err != nil {
-		log.Notice("Pidfile exists at %s, proceeding...", workDir.Dir()+pidFile)
+		log.Notice("Pidfile exists at %s, proceeding...", haConfig.PidFile)
 	} else {
 		log.Notice("Created new pidfile...")
 	}
 
-	// start or reload
 	err = haRuntime.Reload(&haConfig)
 	if err != nil {
 		log.Fatal("Error while reloading haproxy: " + err.Error())
@@ -153,14 +158,15 @@ func main() {
 
 	log.Notice("Initializing metric streams...")
 
+	Stream := metrics.NewStreamer(&haRuntime, 3000, log)
 	// Initialize the stream from a runtime
-	stream.Init(&haRuntime, 3000, log)
+	// stream.Init(&haRuntime, 3000, log)
 
 	// Setup Kafka if required
 	if len(kafkaHost) > 0 {
 
 		kafkaChannel := make(chan metrics.Metric)
-		stream.AddClient(kafkaChannel)
+		Stream.AddClient(kafkaChannel)
 
 		kafka := metrics.KafkaProducer{Log: log}
 		kafka.In(kafkaChannel)
@@ -168,8 +174,8 @@ func main() {
 
 	}
 
-	sseChannel := make(chan metrics.Metric)
-	stream.AddClient(sseChannel)
+	sseChannel := make(chan metrics.Metric, 10000)
+	Stream.AddClient(sseChannel)
 
 	// Always setup SSE Stream
 	sseBroker := &metrics.SSEBroker{
@@ -180,9 +186,8 @@ func main() {
 		log,
 	}
 
-	sseBroker.In(sseChannel)
-	sseBroker.Start()
-	go stream.Start()
+	go sseBroker.Start()
+	go Stream.Start()
 
 	/*
 		Zookeeper setup

@@ -14,8 +14,8 @@ const (
 )
 
 // Load a config from disk
-func (c *Config) GetConfigFromDisk(file string) error {
-	if s, err := ioutil.ReadFile(file); err != nil {
+func (c *Config) GetConfigFromDisk() error {
+	if s, err := ioutil.ReadFile(c.JsonFile); err != nil {
 		return err
 	} else {
 		if err := json.Unmarshal(s, &c); err != nil {

@@ -2,6 +2,7 @@ package haproxy
 
 import (
 	"github.com/magneticio/vamp-router/tools"
+	"path"
 )
 
 const (
@@ -73,7 +74,7 @@ func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
 		Name:          name,
 		Host:          "",
 		Port:          0,
-		UnixSock:      compileSocketName(c.WorkingDir+"/vamp.", name, ".sock"),
+		UnixSock:      compileSocketName(c.WorkingDir, name),
 		Weight:        weight,
 		MaxConn:       1000,
 		Check:         false,
@@ -81,9 +82,10 @@ func (c *Config) socketServerFactory(name string, weight int) *ServerDetail {
 	}
 }
 
-func compileSocketName(prefix string, base string, postfix string) string {
+func compileSocketName(dir string, base string) string {
+	postfix := ".sock"
 	if len(base) == 0 {
-		return (prefix + tools.GetMD5Hash(tools.GetUUID()) + postfix)
+		return (path.Join(dir, (tools.GetMD5Hash(tools.GetUUID()) + postfix)))
 	}
-	return (prefix + tools.GetMD5Hash(base) + postfix)
+	return (path.Join(dir, (tools.GetMD5Hash(base) + postfix)))
 }

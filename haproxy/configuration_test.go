@@ -24,13 +24,18 @@ var (
 
 func TestConfiguration_GetConfigFromDisk(t *testing.T) {
 
-	if haConfig.GetConfigFromDisk(CFG_JSON) != nil {
+	haConfig.JsonFile = CFG_JSON
+	if haConfig.GetConfigFromDisk() != nil {
 		t.Errorf("Failed to load configuration from disk")
 	}
 
-	if haConfig.GetConfigFromDisk("/this_is_really_something_wrong") == nil {
+	haConfig.JsonFile = "/tmp/this_is_really_something_wrong"
+
+	if haConfig.GetConfigFromDisk() == nil {
 		t.Errorf("Expected an error when loading non existent path")
 	}
+
+	haConfig.JsonFile = JSON_FILE
 
 }
 

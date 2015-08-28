@@ -177,6 +177,6 @@ backend {{.Name}}
 
 backend abusers
     mode http
-    errorfile 409 {{ .ErrorPagesDir}}500rate.http
+    errorfile 409 {{ .ErrorPagesDir}}/500rate.http
 
 ### END GENERATED SECTION ###

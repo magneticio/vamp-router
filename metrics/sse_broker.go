@@ -37,45 +37,44 @@ type SSEBroker struct {
 	Log *gologger.Logger
 }
 
-func (b *SSEBroker) In(c chan Metric) {
-	b.MetricsChannel = c
-}
-
 // This SSEBroker method starts a new goroutine.  It handles
 // the addition & removal of Clients, as well as the broadcasting
 // of messages out to Clients that are currently attached.
 //
 func (b *SSEBroker) Start() {
 
-	go func() {
-		for {
+	counter := 0
 
-			// Block until we receive from one of the
-			// three following channels.
-			select {
+	for {
 
-			case s := <-b.NewClients:
+		// Block until we receive from one of the
+		// three following channels.
+		select {
 
-				// There is a new client attached and we
-				// want to start sending them messages.
-				b.Clients[s] = true
-				b.Log.Notice("Added new SSE stream client")
+		case s := <-b.NewClients:
 
-			case s := <-b.DefunctClients:
+			// There is a new client attached and we
+			// want to start sending them messages.
+			b.Clients[s] = true
+			b.Log.Notice("Added new SSE stream client")
 
-				// A client has dettached and we want to
-				// stop sending them messages.
-				delete(b.Clients, s)
-				b.Log.Notice("Removed SSE stream client")
+		case s := <-b.DefunctClients:
 
-			case metric := <-b.MetricsChannel:
+			// A client has dettached and we want to
+			// stop sending them messages.
+			delete(b.Clients, s)
+			b.Log.Notice("Removed SSE stream client")
 
-				for s, _ := range b.Clients {
-					s <- metric
-				}
+		case metric := <-b.MetricsChannel:
+			counter += 1
+			// b.Log.Notice("received metrics in SSEBroker: %v", counter)
+			for s, _ := range b.Clients {
+				s <- metric
 			}
+		default:
+			counter = 0
 		}
-	}()
+	}
 }
 
 // This SSEBroker method handles and HTTP request at the "/events/" URL.
@@ -110,22 +109,19 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for {
 
-		// Read from our messageChan.
-		msg := <-messageChan
+		msg, open := <-messageChan
+
+		if !open {
+			break
+		}
 
 		json, err := json.Marshal(msg)
 		if err != nil {
 			return
 		}
-
-		// Write to the ResponseWriter, `w`.
 		fmt.Fprintf(w, "event: router-metric\ndata: %s\n\n", json)
-
-		// Flush the response.  This is only possible if
-		// the repsonse supports streaming.
 		f.Flush()
 	}
-
 	// Done.
 	b.Log.Notice("Finished HTTP stream request at ", r.URL.Path)
 }

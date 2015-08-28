@@ -5,14 +5,10 @@ import (
 	gologger "github.com/op/go-logging"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 )
 
 type Streamer struct {
-
-	// simple counter to give heartbeats in the log how many messages where parsed during a time period
-	Counter       int64
 	wantedMetrics []string
 	haRuntime     *haproxy.Runtime
 	pollFrequency int
@@ -26,22 +22,22 @@ func (s *Streamer) AddClient(c chan Metric) {
 }
 
 // Just sets the metrics we want for now...
-func (s *Streamer) Init(haRuntime *haproxy.Runtime, frequency int, log *gologger.Logger) {
-	s.Log = log
-	s.wantedMetrics = []string{"scur", "qcur", "qmax", "smax", "slim", "ereq", "econ", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"}
-	s.haRuntime = haRuntime
-	s.pollFrequency = frequency
-	s.Clients = make(map[chan Metric]bool)
+func NewStreamer(haRuntime *haproxy.Runtime, frequency int, log *gologger.Logger) *Streamer {
+	return &Streamer{
+		Log:           log,
+		wantedMetrics: []string{"scur", "qcur", "qmax", "smax", "slim", "ereq", "econ", "lastsess", "qtime", "ctime", "rtime", "ttime", "req_rate", "req_rate_max", "req_tot", "rate", "rate_lim", "rate_max", "hrsp_1xx", "hrsp_2xx", "hrsp_3xx", "hrsp_4xx", "hrsp_5xx"},
+		haRuntime:     haRuntime,
+		pollFrequency: frequency,
+		Clients:       make(map[chan Metric]bool),
+	}
 }
 
 // simple wrapper for the actual start command.
-func (s *Streamer) Start() error {
+func (s *Streamer) Start() {
 
 	defer s.StartProtected()
-
 	s.StartProtected()
 
-	return nil
 }
 
 /*
@@ -50,7 +46,7 @@ func (s *Streamer) Start() error {
   It also protects against crashes by recovering panics and restarting
   the routine again.
 */
-func (s *Streamer) StartProtected() error {
+func (s *Streamer) StartProtected() {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -60,13 +56,9 @@ func (s *Streamer) StartProtected() error {
 		}
 	}()
 
-	s.Heartbeat()
+	statsChannel := make(chan map[string]map[string]string, 1000)
 
-	// create a channel to send the stats to the parser
-	statsChannel := make(chan map[string]map[string]string)
-
-	// start up the parser in a separate routine
-	go ParseMetrics(statsChannel, s.Clients, s.wantedMetrics, &s.Counter)
+	go ParseMetrics(statsChannel, s.Clients, s.wantedMetrics)
 
 	for {
 		// start pumping the stats into the channel
@@ -77,14 +69,13 @@ func (s *Streamer) StartProtected() error {
 		statsChannel <- stats
 		time.Sleep(time.Duration(s.pollFrequency) * time.Millisecond)
 	}
-	return nil
 }
 
 /*
 	Parses a []Stats and injects it into each Metric channel in a map of channels
 */
 
-func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Metric]bool, wantedMetrics []string, counter *int64) {
+func ParseMetrics(statsChannel chan map[string]map[string]string, clients map[chan Metric]bool, wantedMetrics []string) {
 
 	wantedFrontendMetric := make(map[string]bool)
 	wantedFrontendMetric["ereq"] = true
@@ -93,11 +84,8 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 	wantedFrontendMetric["req_rate"] = true
 
 	for {
-
 		select {
-
 		case stats := <-statsChannel:
-
 			localTime := time.Now().Format(time.RFC3339)
 
 			// for each proxy in the stats dump, pick out the wanted metrics.
@@ -125,7 +113,7 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 							case len(pxnames) == 1 && (svname == "BACKEND" || svname == "FRONTEND"):
 								tags = append(tags, "routes:"+proxy["pxname"], "route")
 
-								EmitMetric(localTime, tags, metric, value, counter, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 
 							//-if pxname has no "."  separator, and svname is not [BACKEND|FRONTEND] it is an "in between"
 							// server that routes to the actual service via a socket.
@@ -139,48 +127,30 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, c map[chan Met
 							//- if pxname has a separator, and svname is [BACKEND|FRONTEND] it is a service
 							case len(pxnames) > 1 && (svname == "BACKEND" || svname == "FRONTEND"):
 								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "service")
-								EmitMetric(localTime, tags, metric, value, counter, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 
 							//- if svname is not [BACKEND|FRONTEND] its a SERVER in a SERVICE and we prepend it with "server:"
 							case len(pxnames) > 1 && (svname != "BACKEND" && svname != "FRONTEND"):
 								tags = append(tags, "routes:"+pxnames[0], "services:"+pxnames[1], "servers:"+svname, "server")
-								EmitMetric(localTime, tags, metric, value, counter, c)
+								EmitMetric(localTime, tags, metric, value, clients)
 							}
 						}
 					}
 				}
 			}
+		default:
 		}
 	}
 }
 
-func EmitMetric(time string, tags []string, metric string, value string, counter *int64, c map[chan Metric]bool) {
+func EmitMetric(time string, tags []string, metric string, value string, clients map[chan Metric]bool) {
 	tags = append(tags, "metrics:"+metric)
 	_type := "router-metric"
 	metricValue, _ := strconv.Atoi(value)
-	metricObj := Metric{tags, metricValue, time, _type}
-	atomic.AddInt64(counter, 1)
 
-	for s, _ := range c {
-		s <- metricObj
+	//debug
+	// fmt.Println("%v => metric %v m: %v\n", time, tags[0], metricValue)
+	for s, _ := range clients {
+		s <- Metric{tags, metricValue, time, _type}
 	}
-}
-
-/*
-  Logs a message every ticker interval giving an update on how many messages were parsed
-*/
-func (s *Streamer) Heartbeat() error {
-
-	ticker := time.NewTicker(60 * time.Second)
-
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				s.Log.Notice("Metrics parsed in last minute: %d \n", s.Counter)
-				atomic.StoreInt64(&s.Counter, 0)
-			}
-		}
-	}()
-	return nil
 }
