@@ -71,8 +71,6 @@ func (b *SSEBroker) Start() {
 			for s, _ := range b.Clients {
 				s <- metric
 			}
-		default:
-			counter = 0
 		}
 	}
 }

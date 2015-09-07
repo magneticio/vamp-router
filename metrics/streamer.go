@@ -138,7 +138,6 @@ func ParseMetrics(statsChannel chan map[string]map[string]string, clients map[ch
 					}
 				}
 			}
-		default:
 		}
 	}
 }
