@@ -1,5 +1,6 @@
 # Vamp-router
 
+*NOTE: Since version 0.8.0, Vamp-router is not used in common Vamp setup.*
 
 Vamp-router is inspired by [bamboo](https://github.com/QubitProducts/bamboo) and [consul-haproxy](https://github.com/hashicorp/consul-haproxy). It is not a straight fork or clone of either of these, but parts are borrowed. 
 
