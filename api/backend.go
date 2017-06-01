@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
-	"net/http"
 )
 
 func GetBackends(c *gin.Context) {
@@ -41,7 +42,7 @@ func PostBackend(c *gin.Context) {
 
 	var backend haproxy.Backend
 
-	if c.Bind(&backend) {
+	if err := c.Bind(&backend); err == nil {
 
 		if err := Config(c).AddBackend(&backend); err != nil {
 			HandleError(c, err)
@@ -49,7 +50,7 @@ func PostBackend(c *gin.Context) {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created backend"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -104,14 +105,14 @@ func PostServer(c *gin.Context) {
 	var server haproxy.ServerDetail
 	backend := c.Params.ByName("name")
 
-	if c.Bind(&server) {
+	if err := c.Bind(&server); err == nil {
 		if err := Config(c).AddServer(backend, &server); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created server"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -124,7 +125,7 @@ func PutServerWeight(c *gin.Context) {
 	backend := c.Params.ByName("name")
 	server := c.Params.ByName("server")
 
-	if c.Bind(&json) {
+	if err := c.Bind(&json); err == nil {
 		status, err := Runtime(c).SetWeight(backend, server, json.Weight)
 
 		// check on Runtime errors
@@ -147,7 +148,7 @@ func PutServerWeight(c *gin.Context) {
 			}
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 

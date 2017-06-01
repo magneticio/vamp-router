@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
-	"net/http"
 )
 
 func GetRoutes(c *gin.Context) {
@@ -42,14 +43,14 @@ func PutRoute(c *gin.Context) {
 	var route haproxy.Route
 	routeName := c.Params.ByName("route")
 
-	if c.Bind(&route) {
+	if err := c.Bind(&route); err == nil {
 		if err := Config(c).UpdateRoute(routeName, &route); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated route"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -60,14 +61,14 @@ func PostRoute(c *gin.Context) {
 
 	var route haproxy.Route
 
-	if c.Bind(&route) {
+	if err := c.Bind(&route); err == nil {
 		if err := Config(c).AddRoute(route); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created route"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -126,11 +127,11 @@ func PutRouteService(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 	serviceName := c.Params.ByName("service")
 
-	if c.Bind(&service) {
+	if err := c.Bind(&service); err == nil {
 		if err := Config(c).UpdateRouteService(routeName, serviceName, &service); err != nil {
 			HandleError(c, err)
 		} else {
-			HandleReload(c, Config(c), 200, gin.H{"status": "updated service"})
+			HandleReload(c, Config(c), 200, gin.H{"status": "updated service", "error": err.Error()})
 		}
 	} else {
 		c.String(500, "Invalid JSON")
@@ -145,14 +146,14 @@ func PutRouteServices(c *gin.Context) {
 	var services []*haproxy.Service
 	routeName := c.Params.ByName("route")
 
-	if c.Bind(&services) {
+	if err := c.Bind(&services); err == nil {
 		if err := Config(c).UpdateRouteServices(routeName, services); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated services"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -164,14 +165,14 @@ func PostRouteService(c *gin.Context) {
 	var services []*haproxy.Service
 	routeName := c.Params.ByName("route")
 
-	if c.Bind(&services) {
+	if err := c.Bind(&services); err == nil {
 		if err := Config(c).AddRouteServices(routeName, services); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created service(s)"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -248,14 +249,14 @@ func PostServiceServer(c *gin.Context) {
 	routeName := c.Params.ByName("route")
 	serviceName := c.Params.ByName("service")
 
-	if c.Bind(&server) {
+	if err := c.Bind(&server); err == nil {
 		if err := Config(c).AddServiceServer(routeName, serviceName, &server); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created server"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -269,13 +270,13 @@ func PutServiceServer(c *gin.Context) {
 	serviceName := c.Params.ByName("service")
 	serverName := c.Params.ByName("server")
 
-	if c.Bind(&server) {
+	if err := c.Bind(&server); err == nil {
 		if err := Config(c).UpdateServiceServer(routeName, serviceName, serverName, &server); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusOK, gin.H{"status": "updated server"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }

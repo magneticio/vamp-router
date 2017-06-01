@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
-	"net/http"
 )
 
 func GetConfig(c *gin.Context) {
@@ -21,13 +22,13 @@ func PostConfig(c *gin.Context) {
 
 	var config haproxy.Config
 
-	if c.Bind(&config) {
+	if err := c.Bind(&config); err == nil {
 		if err := Config(c).UpdateConfig(&config); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "updated config"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }

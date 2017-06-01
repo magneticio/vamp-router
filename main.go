@@ -2,6 +2,10 @@ package main
 
 import (
 	"flag"
+	"os"
+	"path/filepath"
+	"strconv"
+
 	"github.com/magneticio/vamp-router/api"
 	"github.com/magneticio/vamp-router/haproxy"
 	"github.com/magneticio/vamp-router/helpers"
@@ -10,9 +14,6 @@ import (
 	"github.com/magneticio/vamp-router/tools"
 	"github.com/magneticio/vamp-router/zookeeper"
 	gologger "github.com/op/go-logging"
-	"os"
-	"path/filepath"
-	"strconv"
 )
 
 const (

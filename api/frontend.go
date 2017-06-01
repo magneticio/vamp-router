@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/magneticio/vamp-router/haproxy"
-	"net/http"
 )
 
 func GetFrontends(c *gin.Context) {
@@ -41,14 +42,14 @@ func PostFrontend(c *gin.Context) {
 
 	var frontend haproxy.Frontend
 
-	if c.Bind(&frontend) {
+	if err := c.Bind(&frontend); err == nil {
 		if err := Config(c).AddFrontend(&frontend); err != nil {
 			HandleError(c, err)
 		} else {
 			HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created frontend"})
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 
@@ -86,11 +87,11 @@ func PostFrontendFilter(c *gin.Context) {
 	var Filter haproxy.Filter
 	frontend := c.Params.ByName("name")
 
-	if c.Bind(&Filter) {
+	if err := c.Bind(&Filter); err == nil {
 		Config(c).AddFilter(frontend, &Filter)
 		HandleReload(c, Config(c), http.StatusCreated, gin.H{"status": "created Filter"})
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request", "error": err.Error()})
 	}
 }
 

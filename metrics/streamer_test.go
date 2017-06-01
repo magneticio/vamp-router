@@ -38,7 +38,7 @@ func TestMetrics_ParseMetrics(t *testing.T) {
 
 	statsChannel <- testdata
 
-	for s, _ := range m {
+	for s := range m {
 		metric := <-s
 		if metric.Value != 0 {
 			t.Errorf("value was %d", metric.Value)

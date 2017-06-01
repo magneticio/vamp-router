@@ -68,7 +68,7 @@ func (b *SSEBroker) Start() {
 		case metric := <-b.MetricsChannel:
 			counter += 1
 			// b.Log.Notice("received metrics in SSEBroker: %v", counter)
-			for s, _ := range b.Clients {
+			for s := range b.Clients {
 				s <- metric
 			}
 		}

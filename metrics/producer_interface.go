@@ -1,11 +1,8 @@
 package metrics
 
-
-// 
+//
 type MetricsProducer interface {
-
-  Consume(c chan Metric)
-  Init()
-  Produce()
-
+	Consume(c chan Metric)
+	Init()
+	Produce()
 }

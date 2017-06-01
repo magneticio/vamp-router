@@ -149,7 +149,7 @@ func EmitMetric(time string, tags []string, metric string, value string, clients
 
 	//debug
 	// fmt.Println("%v => metric %v m: %v\n", time, tags[0], metricValue)
-	for s, _ := range clients {
+	for s := range clients {
 		s <- Metric{tags, metricValue, time, _type}
 	}
 }
